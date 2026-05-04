@@ -1349,7 +1349,8 @@
             <select id="settingsProvider">
               <option value="claude">Claude</option>
               <option value="deepseek">Deepseek</option>
-              <option value="mimo">MIMO (小米)</option>
+              <option value="mimo">MIMO (小米，按量付费)</option>
+              <option value="mimo_token_plan">MIMO Token Plan (小米)</option>
             </select>
           </div>
           <div class="settings-field">
@@ -1362,6 +1363,10 @@
           <div class="settings-field">
             <label>API 端点</label>
             <input type="text" id="settingsEndpoint" placeholder="API 端点地址">
+          </div>
+          <div class="settings-field">
+            <label>模型</label>
+            <input type="text" id="settingsModel" placeholder="模型名称">
           </div>
           <div class="settings-actions">
             <button class="btn btn-primary" onclick="saveAISettings()">保存配置</button>
@@ -1382,11 +1387,17 @@
             <p>Key 格式: sk-...</p>
           </div>
           <div class="settings-info">
-            <h4>MIMO (小米)</h4>
+            <h4>MIMO (小米，按量付费)</h4>
             <p>平台: <a href="https://platform.xiaomimimo.com" target="_blank">platform.xiaomimimo.com</a></p>
             <p>端点: https://api.xiaomimimo.com/v1/chat/completions</p>
             <p>Key 格式: sk-xxxxx</p>
-            <p>模型: MiMo-7B-RL、MiMo-7B-SFT</p>
+            <p>模型: mimo-v2-flash、mimo-v2-pro、mimo-v2-omni</p>
+          </div>
+          <div class="settings-info">
+            <h4>MIMO Token Plan (小米)</h4>
+            <p>端点: https://token-plan-sgp.xiaomimimo.com/anthropic/v1/messages</p>
+            <p>接口格式: Anthropic Messages 兼容</p>
+            <p>模型: mimo-v2.5-pro、mimo-v2.5、mimo-v2-pro、mimo-v2-flash</p>
           </div>
         </div>
       </div>
@@ -2436,25 +2447,40 @@
     const AI_PROVIDER_KEY = 'ai_provider';
     const AI_API_KEY_PREFIX = 'ai_key_';
     const AI_ENDPOINT_KEY = 'ai_endpoint_';
+    const AI_MODEL_KEY = 'ai_model_';
 
     const AI_PROVIDERS = {
       claude: {
         name: 'Claude',
+        apiType: 'anthropic',
         endpoint: 'https://api.anthropic.com/v1/messages',
         keyPlaceholder: 'sk-ant-...',
+        model: 'claude-sonnet-4-20250514',
         models: ['claude-sonnet-4-20250514']
       },
       deepseek: {
         name: 'Deepseek',
+        apiType: 'openai',
         endpoint: 'https://api.deepseek.com/v1/chat/completions',
         keyPlaceholder: 'sk-...',
+        model: 'deepseek-chat',
         models: ['deepseek-chat']
       },
       mimo: {
-        name: 'MIMO (小米)',
+        name: 'MIMO (小米，按量付费)',
+        apiType: 'openai',
         endpoint: 'https://api.xiaomimimo.com/v1/chat/completions',
         keyPlaceholder: 'sk-...',
-        models: ['MiMo-7B-RL', 'MiMo-7B-SFT']
+        model: 'mimo-v2-flash',
+        models: ['mimo-v2-flash', 'mimo-v2-pro', 'mimo-v2-omni']
+      },
+      mimo_token_plan: {
+        name: 'MIMO Token Plan (小米)',
+        apiType: 'anthropic_mimo',
+        endpoint: 'https://token-plan-sgp.xiaomimimo.com/anthropic/v1/messages',
+        keyPlaceholder: 'sk-...',
+        model: 'mimo-v2.5-pro',
+        models: ['mimo-v2.5-pro', 'mimo-v2.5', 'mimo-v2-pro', 'mimo-v2-flash', 'mimo-v2-omni']
       }
     };
 
@@ -2483,17 +2509,28 @@
       localStorage.setItem(AI_ENDPOINT_KEY + provider, endpoint);
     }
 
+    function getModel(provider) {
+      const selectedProvider = provider || getProvider();
+      return localStorage.getItem(AI_MODEL_KEY + selectedProvider) || AI_PROVIDERS[selectedProvider].model;
+    }
+
+    function setModel(provider, model) {
+      localStorage.setItem(AI_MODEL_KEY + provider, model);
+    }
+
     // Settings page functions
     function initSettings() {
       const provider = getProvider();
       document.getElementById('settingsProvider').value = provider;
       document.getElementById('settingsApiKey').value = getApiKey(provider);
       document.getElementById('settingsEndpoint').value = getEndpoint(provider);
+      document.getElementById('settingsModel').value = getModel(provider);
 
       document.getElementById('settingsProvider').addEventListener('change', (e) => {
         const newProvider = e.target.value;
         document.getElementById('settingsEndpoint').value = getEndpoint(newProvider);
         document.getElementById('settingsApiKey').value = getApiKey(newProvider);
+        document.getElementById('settingsModel').value = getModel(newProvider);
       });
     }
 
@@ -2501,6 +2538,7 @@
       const provider = document.getElementById('settingsProvider').value;
       const apiKey = document.getElementById('settingsApiKey').value.trim();
       const endpoint = document.getElementById('settingsEndpoint').value.trim();
+      const model = document.getElementById('settingsModel').value.trim();
 
       if (!apiKey) {
         showToast('请输入 API Key', 'error');
@@ -2512,9 +2550,15 @@
         return;
       }
 
+      if (!model) {
+        showToast('请输入模型名称', 'error');
+        return;
+      }
+
       setProvider(provider);
       setApiKey(provider, apiKey);
       setEndpoint(provider, endpoint);
+      setModel(provider, model);
       showToast('AI 配置已保存');
     }
 
@@ -2526,9 +2570,16 @@
     async function testAIConnection() {
       const provider = document.getElementById('settingsProvider').value;
       const apiKey = document.getElementById('settingsApiKey').value.trim();
+      const endpoint = document.getElementById('settingsEndpoint').value.trim();
+      const model = document.getElementById('settingsModel').value.trim();
 
       if (!apiKey) {
         showToast('请先输入 API Key', 'error');
+        return;
+      }
+
+      if (!endpoint || !model) {
+        showToast('请先填写 API 端点和模型', 'error');
         return;
       }
 
@@ -2539,6 +2590,8 @@
       // Save settings first
       setProvider(provider);
       setApiKey(provider, apiKey);
+      setEndpoint(provider, endpoint);
+      setModel(provider, model);
 
       const result = await callAIAPI('你好，请回复"连接成功"两个字');
 
@@ -2566,20 +2619,31 @@
       }
 
       try {
-        let response;
+        const config = AI_PROVIDERS[provider];
         const endpoint = getEndpoint(provider);
+        const model = getModel(provider);
+        let response;
 
-        if (provider === 'claude') {
+        if (config.apiType === 'anthropic' || config.apiType === 'anthropic_mimo') {
+          const headers = {
+            'Content-Type': 'application/json',
+            'anthropic-version': '2023-06-01'
+          };
+
+          if (provider === 'claude') {
+            headers['x-api-key'] = apiKey;
+            headers['anthropic-dangerous-direct-browser-access'] = 'true';
+          } else {
+            headers['x-api-key'] = apiKey;
+            headers['api-key'] = apiKey;
+            headers['Authorization'] = `Bearer ${apiKey}`;
+          }
+
           response = await fetch(endpoint, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': apiKey,
-              'anthropic-version': '2023-06-01',
-              'anthropic-dangerous-direct-browser-access': 'true'
-            },
+            headers,
             body: JSON.stringify({
-              model: 'claude-sonnet-4-20250514',
+              model,
               max_tokens: 2000,
               messages: [{ role: 'user', content: prompt }]
             })
@@ -2591,16 +2655,28 @@
           }
 
           const data = await response.json();
-          return data.content[0].text;
-        } else if (provider === 'deepseek') {
+          if (Array.isArray(data.content)) {
+            return data.content.map(item => item.text || '').join('\n').trim();
+          }
+          if (typeof data.content === 'string') {
+            return data.content;
+          }
+          return data.completion || data.message?.content || '';
+        } else if (config.apiType === 'openai') {
+          const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          };
+
+          if (provider === 'mimo') {
+            headers['api-key'] = apiKey;
+          }
+
           response = await fetch(endpoint, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${apiKey}`
-            },
+            headers,
             body: JSON.stringify({
-              model: 'deepseek-chat',
+              model,
               max_tokens: 2000,
               messages: [{ role: 'user', content: prompt }]
             })
@@ -2612,28 +2688,7 @@
           }
 
           const data = await response.json();
-          return data.choices[0].message.content;
-        } else if (provider === 'mimo') {
-          response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-              model: 'MiMo-7B-RL',
-              max_tokens: 2000,
-              messages: [{ role: 'user', content: prompt }]
-            })
-          });
-
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error?.message || 'API 调用失败');
-          }
-
-          const data = await response.json();
-          return data.choices[0].message.content;
+          return data.choices?.[0]?.message?.content || data.choices?.[0]?.text || '';
         }
       } catch (err) {
         showToast('AI 调用失败: ' + err.message, 'error');
