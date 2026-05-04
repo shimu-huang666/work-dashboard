@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人工作台</title>
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* ========== CSS Reset & Base ========== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #4F46E5;
+      --primary-light: #818CF8;
+      --primary-dark: #3730A3;
+      --bg: #F9FAFB;
+      --card: #FFFFFF;
+      --text: #111827;
+      --text-light: #6B7280;
+      --border: #E5E7EB;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --shadow: 0 1px 3px rgba(0,0,0,0.1);
+      --shadow-lg: 0 4px 6px rgba(0,0,0,0.1);
+      --radius: 8px;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ========== Layout ========== */
+    .app {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding: 16px 20px;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+    .header-date {
+      color: var(--text-light);
+      font-size: 14px;
+    }
+
+    /* ========== Navigation Tabs ========== */
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      background: var(--card);
+      padding: 8px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .nav-tab {
+      padding: 10px 20px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-light);
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    .nav-tab:hover { background: var(--bg); }
+    .nav-tab.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* ========== Config Panel ========== */
+    .config-panel {
+      display: none;
+      padding: 20px;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+    .config-panel.show { display: block; }
+    .config-panel h3 { margin-bottom: 16px; }
+    .config-form {
+      display: flex;
+      gap: 12px;
+      align-items: end;
+    }
+    .config-form .field { flex: 1; }
+    .config-form label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+    .config-form input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    /* ========== Content Area ========== */
+    .content { display: none; }
+    .content.active { display: block; }
+
+    /* ========== Kanban Board ========== */
+    .kanban {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .kanban-column {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      min-height: 400px;
+    }
+    .kanban-column-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--border);
+    }
+    .kanban-column-title {
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .kanban-count {
+      background: var(--bg);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+      color: var(--text-light);
+    }
+    .kanban-card {
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .kanban-card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-1px);
+    }
+    .kanban-card-title {
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .kanban-card-desc {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-bottom: 8px;
+    }
+    .kanban-card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+    .priority-badge {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .priority-high { background: #FEE2E2; color: #DC2626; }
+    .priority-medium { background: #FEF3C7; color: #D97706; }
+    .priority-low { background: #D1FAE5; color: #059669; }
+    .kanban-card-actions {
+      display: flex;
+      gap: 4px;
+    }
+    .kanban-card-actions button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: var(--text-light);
+      font-size: 14px;
+    }
+    .kanban-card-actions button:hover {
+      color: var(--primary);
+    }
+
+    /* ========== Add Task Form ========== */
+    .add-task-form {
+      display: none;
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .add-task-form.show { display: block; }
+    .add-task-form input,
+    .add-task-form textarea,
+    .add-task-form select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .add-task-form textarea { resize: vertical; min-height: 60px; }
+    .form-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    /* ========== Daily Log ========== */
+    .daily-log {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 20px;
+    }
+    .calendar {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .calendar-day-header {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-light);
+      padding: 4px;
+    }
+    .calendar-day {
+      text-align: center;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .calendar-day:hover { background: var(--bg); }
+    .calendar-day.today { background: var(--primary); color: white; }
+    .calendar-day.has-log { font-weight: 600; }
+    .calendar-day.has-log::after {
+      content: '';
+      display: block;
+      width: 4px;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 50%;
+      margin: 2px auto 0;
+    }
+    .calendar-day.today.has-log::after { background: white; }
+    .log-editor {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+    .log-editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .mood-selector {
+      display: flex;
+      gap: 8px;
+    }
+    .mood-btn {
+      font-size: 24px;
+      cursor: pointer;
+      opacity: 0.4;
+      transition: all 0.2s;
+      background: none;
+      border: none;
+      padding: 4px;
+    }
+    .mood-btn:hover { opacity: 0.7; }
+    .mood-btn.active { opacity: 1; }
+    .log-content {
+      width: 100%;
+      min-height: 300px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      line-height: 1.6;
+      resize: vertical;
+      font-family: inherit;
+    }
+    .log-actions {
+      margin-top: 12px;
+      text-align: right;
+    }
+
+    /* ========== Plans ========== */
+    .plans-container {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+    .plans-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .plans-filters {
+      display: flex;
+      gap: 8px;
+    }
+    .filter-btn {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .filter-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .plans-list { list-style: none; }
+    .plan-item {
+      display: flex;
+      align-items: center;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 8px;
+      transition: all 0.2s;
+    }
+    .plan-item:hover { box-shadow: var(--shadow); }
+    .plan-status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+    .status-pending { background: var(--text-light); }
+    .status-in_progress { background: var(--warning); }
+    .status-completed { background: var(--success); }
+    .status-cancelled { background: var(--danger); }
+    .plan-info { flex: 1; }
+    .plan-title { font-weight: 500; }
+    .plan-meta {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-top: 4px;
+    }
+    .plan-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* ========== Notes ========== */
+    .notes-container {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 20px;
+    }
+    .notes-list {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .notes-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .note-item {
+      padding: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: all 0.2s;
+    }
+    .note-item:hover { background: var(--bg); }
+    .note-item.active { background: var(--primary); color: white; }
+    .note-item-title {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .note-item-preview {
+      font-size: 13px;
+      opacity: 0.7;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .note-item-meta {
+      font-size: 11px;
+      margin-top: 8px;
+      opacity: 0.6;
+    }
+    .note-editor {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+    .note-editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .note-title-input {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .note-title-input:focus { outline: none; }
+    .note-tags-input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .note-content-input {
+      width: 100%;
+      min-height: 400px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      line-height: 1.6;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    /* ========== Buttons ========== */
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: var(--bg); color: var(--text); }
+    .btn-secondary:hover { background: var(--border); }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { background: #DC2626; }
+    .btn-sm { padding: 6px 10px; font-size: 12px; }
+    .btn-icon {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      color: var(--text-light);
+      font-size: 16px;
+    }
+    .btn-icon:hover { color: var(--primary); }
+
+    /* ========== Modal ========== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal h3 { margin-bottom: 16px; }
+    .modal-form input,
+    .modal-form textarea,
+    .modal-form select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .modal-form textarea { resize: vertical; min-height: 100px; }
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    /* ========== Toast ========== */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      background: var(--text);
+      color: white;
+      border-radius: 6px;
+      font-size: 14px;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 2000;
+    }
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+
+    /* ========== Responsive ========== */
+    @media (max-width: 768px) {
+      .kanban { grid-template-columns: 1fr; }
+      .daily-log { grid-template-columns: 1fr; }
+      .notes-container { grid-template-columns: 1fr; }
+      .notes-list { max-height: 300px; }
+      .header { flex-direction: column; gap: 8px; text-align: center; }
+      .nav-tabs { overflow-x: auto; }
+      .config-form { flex-direction: column; }
+    }
+
+    /* ========== Loading ========== */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-light);
+    }
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ========== Auth Page ========== */
+    .auth-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .auth-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+    }
+    .auth-card h2 {
+      text-align: center;
+      margin-bottom: 8px;
+      color: var(--primary);
+    }
+    .auth-card p {
+      text-align: center;
+      color: var(--text-light);
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+    .auth-form .field {
+      margin-bottom: 16px;
+    }
+    .auth-form label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+    .auth-form input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    .auth-form input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .auth-form .btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+    }
+    .auth-links {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 13px;
+    }
+    .auth-links a {
+      color: var(--primary);
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .auth-links a:hover {
+      text-decoration: underline;
+    }
+    .auth-error {
+      background: #FEE2E2;
+      color: #DC2626;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .auth-error.show { display: block; }
+    .auth-success {
+      background: #D1FAE5;
+      color: #059669;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .auth-success.show { display: block; }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-email {
+      font-size: 13px;
+      color: var(--text-light);
+    }
+  </style>
+</head>
+<body>
+  <!-- Auth Page -->
+  <div class="auth-container" id="authPage" style="display: none;">
+    <div class="auth-card">
+      <h2>个人工作台</h2>
+      <p id="authSubtitle">登录以访问你的工作台</p>
+      <div class="auth-error" id="authError"></div>
+      <div class="auth-success" id="authSuccess"></div>
+
+      <!-- Login Form -->
+      <form class="auth-form" id="loginForm" onsubmit="handleLogin(event)">
+        <div class="field">
+          <label>邮箱</label>
+          <input type="email" id="loginEmail" placeholder="your@email.com" required>
+        </div>
+        <div class="field">
+          <label>密码</label>
+          <input type="password" id="loginPassword" placeholder="输入密码" required>
+        </div>
+        <button type="submit" class="btn btn-primary">登录</button>
+      </form>
+
+      <!-- Register Form -->
+      <form class="auth-form" id="registerForm" style="display: none;" onsubmit="handleRegister(event)">
+        <div class="field">
+          <label>邮箱</label>
+          <input type="email" id="registerEmail" placeholder="your@email.com" required>
+        </div>
+        <div class="field">
+          <label>密码</label>
+          <input type="password" id="registerPassword" placeholder="至少6位密码" required minlength="6">
+        </div>
+        <div class="field">
+          <label>确认密码</label>
+          <input type="password" id="registerConfirm" placeholder="再次输入密码" required minlength="6">
+        </div>
+        <button type="submit" class="btn btn-primary">注册</button>
+      </form>
+
+      <!-- Reset Password Form -->
+      <form class="auth-form" id="resetForm" style="display: none;" onsubmit="handleReset(event)">
+        <div class="field">
+          <label>邮箱</label>
+          <input type="email" id="resetEmail" placeholder="your@email.com" required>
+        </div>
+        <button type="submit" class="btn btn-primary">发送重置邮件</button>
+      </form>
+
+      <div class="auth-links">
+        <span id="toRegister">没有账号？<a onclick="showRegister()">立即注册</a></span>
+        <span id="toLogin" style="display: none;">已有账号？<a onclick="showLogin()">立即登录</a></span>
+        <span id="toReset"><a onclick="showReset()">忘记密码？</a></span>
+        <span id="backToLogin" style="display: none;"><a onclick="showLogin()">返回登录</a></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Config Panel (独立于登录和主界面) -->
+  <div class="config-panel" id="configPanel" style="position: fixed; top: 20px; right: 20px; z-index: 100; max-width: 400px;">
+    <h3>Supabase 配置</h3>
+    <p style="font-size: 13px; color: var(--text-light); margin-bottom: 12px;">
+      请先在 <a href="https://supabase.com" target="_blank">Supabase</a> 创建项目，然后执行 supabase-setup.sql，最后填入以下信息：
+    </p>
+    <div class="config-form">
+      <div class="field">
+        <label>Project URL</label>
+        <input type="text" id="supabaseUrl" placeholder="https://xxxxx.supabase.co">
+      </div>
+      <div class="field">
+        <label>Anon Key</label>
+        <input type="text" id="supabaseKey" placeholder="eyJxxxxxx">
+      </div>
+      <button class="btn btn-primary" onclick="saveConfig()">保存并连接</button>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div class="app" id="mainApp" style="display: none;">
+    <!-- Header -->
+    <header class="header">
+      <h1>个人工作台</h1>
+      <div class="user-info">
+        <span class="header-date" id="currentDate"></span>
+        <span class="user-email" id="userEmail"></span>
+        <button class="btn-icon" onclick="toggleConfig()" title="设置">⚙️</button>
+        <button class="btn btn-sm btn-secondary" onclick="handleLogout()">退出</button>
+      </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="kanban">📋 看板</button>
+      <button class="nav-tab" data-tab="daily">📅 日记</button>
+      <button class="nav-tab" data-tab="plans">🎯 计划</button>
+      <button class="nav-tab" data-tab="notes">📝 笔记</button>
+    </nav>
+
+    <!-- Kanban Content -->
+    <div class="content active" id="kanban">
+      <div class="kanban">
+        <!-- Todo Column -->
+        <div class="kanban-column">
+          <div class="kanban-column-header">
+            <span class="kanban-column-title">📌 待办</span>
+            <span class="kanban-count" id="todoCount">0</span>
+          </div>
+          <div class="add-task-form" id="addTodoForm">
+            <input type="text" id="todoTitle" placeholder="任务标题">
+            <textarea id="todoDesc" placeholder="任务描述（可选）"></textarea>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <select id="todoPriority" style="flex:1;">
+                <option value="low">低优先级</option>
+                <option value="medium" selected>中优先级</option>
+                <option value="high">高优先级</option>
+              </select>
+              <input type="date" id="todoDueDate" style="flex:1;">
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-secondary btn-sm" onclick="toggleAddForm('todo')">取消</button>
+              <button class="btn btn-primary btn-sm" onclick="addTask('todo')">添加</button>
+            </div>
+          </div>
+          <button class="btn btn-secondary" style="width:100%; margin-bottom:12px;" onclick="toggleAddForm('todo')">+ 添加任务</button>
+          <div id="todoList"></div>
+        </div>
+
+        <!-- Doing Column -->
+        <div class="kanban-column">
+          <div class="kanban-column-header">
+            <span class="kanban-column-title">🔄 进行中</span>
+            <span class="kanban-count" id="doingCount">0</span>
+          </div>
+          <div class="add-task-form" id="addDoingForm">
+            <input type="text" id="doingTitle" placeholder="任务标题">
+            <textarea id="doingDesc" placeholder="任务描述（可选）"></textarea>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+              <select id="doingPriority" style="flex:1;">
+                <option value="low">低优先级</option>
+                <option value="medium" selected>中优先级</option>
+                <option value="high">高优先级</option>
+              </select>
+              <input type="date" id="doingDueDate" style="flex:1;">
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-secondary btn-sm" onclick="toggleAddForm('doing')">取消</button>
+              <button class="btn btn-primary btn-sm" onclick="addTask('doing')">添加</button>
+            </div>
+          </div>
+          <button class="btn btn-secondary" style="width:100%; margin-bottom:12px;" onclick="toggleAddForm('doing')">+ 添加任务</button>
+          <div id="doingList"></div>
+        </div>
+
+        <!-- Done Column -->
+        <div class="kanban-column">
+          <div class="kanban-column-header">
+            <span class="kanban-column-title">✅ 已完成</span>
+            <span class="kanban-count" id="doneCount">0</span>
+          </div>
+          <div id="doneList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Daily Log Content -->
+    <div class="content" id="daily">
+      <div class="daily-log">
+        <div class="calendar">
+          <div class="calendar-header">
+            <button class="btn-icon" onclick="changeMonth(-1)">◀</button>
+            <span id="calendarTitle"></span>
+            <button class="btn-icon" onclick="changeMonth(1)">▶</button>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+        <div class="log-editor">
+          <div class="log-editor-header">
+            <h3 id="logDateTitle">选择日期查看或编辑</h3>
+            <div class="mood-selector">
+              <button class="mood-btn" data-mood="happy" onclick="selectMood('happy')">😊</button>
+              <button class="mood-btn" data-mood="good" onclick="selectMood('good')">🙂</button>
+              <button class="mood-btn" data-mood="neutral" onclick="selectMood('neutral')">😐</button>
+              <button class="mood-btn" data-mood="bad" onclick="selectMood('bad')">😕</button>
+              <button class="mood-btn" data-mood="terrible" onclick="selectMood('terrible')">😢</button>
+            </div>
+          </div>
+          <textarea class="log-content" id="logContent" placeholder="记录今天的工作学习内容..."></textarea>
+          <div class="log-actions">
+            <button class="btn btn-primary" onclick="saveDailyLog()">保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plans Content -->
+    <div class="content" id="plans">
+      <div class="plans-container">
+        <div class="plans-header">
+          <h3>未来计划</h3>
+          <div style="display: flex; gap: 12px;">
+            <div class="plans-filters">
+              <button class="filter-btn active" data-filter="all" onclick="filterPlans('all')">全部</button>
+              <button class="filter-btn" data-filter="pending" onclick="filterPlans('pending')">待开始</button>
+              <button class="filter-btn" data-filter="in_progress" onclick="filterPlans('in_progress')">进行中</button>
+              <button class="filter-btn" data-filter="completed" onclick="filterPlans('completed')">已完成</button>
+            </div>
+            <button class="btn btn-primary" onclick="showPlanModal()">+ 新建计划</button>
+          </div>
+        </div>
+        <ul class="plans-list" id="plansList"></ul>
+      </div>
+    </div>
+
+    <!-- Notes Content -->
+    <div class="content" id="notes">
+      <div class="notes-container">
+        <div class="notes-list">
+          <div class="notes-list-header">
+            <h3>笔记</h3>
+            <button class="btn btn-primary btn-sm" onclick="createNote()">+ 新建</button>
+          </div>
+          <div id="notesListItems"></div>
+        </div>
+        <div class="note-editor" id="noteEditor">
+          <div class="note-editor-header">
+            <div>
+              <button class="btn btn-sm" onclick="togglePin()" id="pinBtn">📌 置顶</button>
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="deleteNote()">删除</button>
+          </div>
+          <input type="text" class="note-title-input" id="noteTitle" placeholder="笔记标题">
+          <input type="text" class="note-tags-input" id="noteTags" placeholder="标签（用逗号分隔）">
+          <textarea class="note-content-input" id="noteContent" placeholder="开始写笔记..."></textarea>
+          <div style="margin-top: 12px; text-align: right;">
+            <button class="btn btn-primary" onclick="saveNote()">保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plan Modal -->
+  <div class="modal-overlay" id="planModal">
+    <div class="modal">
+      <h3 id="planModalTitle">新建计划</h3>
+      <div class="modal-form">
+        <input type="text" id="planTitle" placeholder="计划标题">
+        <textarea id="planDesc" placeholder="计划描述（可选）"></textarea>
+        <input type="date" id="planTargetDate">
+        <select id="planStatus">
+          <option value="pending">待开始</option>
+          <option value="in_progress">进行中</option>
+          <option value="completed">已完成</option>
+          <option value="cancelled">已取消</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="hidePlanModal()">取消</button>
+        <button class="btn btn-primary" onclick="savePlan()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task Edit Modal -->
+  <div class="modal-overlay" id="taskModal">
+    <div class="modal">
+      <h3>编辑任务</h3>
+      <div class="modal-form">
+        <input type="text" id="editTaskTitle" placeholder="任务标题">
+        <textarea id="editTaskDesc" placeholder="任务描述"></textarea>
+        <select id="editTaskStatus">
+          <option value="todo">待办</option>
+          <option value="doing">进行中</option>
+          <option value="done">已完成</option>
+        </select>
+        <select id="editTaskPriority">
+          <option value="low">低优先级</option>
+          <option value="medium">中优先级</option>
+          <option value="high">高优先级</option>
+        </select>
+        <input type="date" id="editTaskDueDate">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-danger" onclick="deleteTask()">删除</button>
+        <button class="btn btn-secondary" onclick="hideTaskModal()">取消</button>
+        <button class="btn btn-primary" onclick="updateTask()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ========== Global State ==========
+    let supabaseClient = null;
+    let currentUser = null;
+    let currentTab = 'kanban';
+    let tasks = [];
+    let dailyLogs = {};
+    let plans = [];
+    let notes = [];
+    let currentPlanId = null;
+    let currentTaskId = null;
+    let currentNoteId = null;
+    let currentLogDate = new Date().toISOString().split('T')[0];
+    let calendarDate = new Date();
+    let planFilter = 'all';
+
+    // ========== Initialization ==========
+    document.addEventListener('DOMContentLoaded', () => {
+      updateCurrentDate();
+      loadConfig();
+      initTabs();
+    });
+
+    function updateCurrentDate() {
+      const now = new Date();
+      const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+      document.getElementById('currentDate').textContent = now.toLocaleDateString('zh-CN', options);
+    }
+
+    // ========== Supabase Config ==========
+    function loadConfig() {
+      const url = localStorage.getItem('supabase_url');
+      const key = localStorage.getItem('supabase_key');
+      if (url && key) {
+        document.getElementById('supabaseUrl').value = url;
+        document.getElementById('supabaseKey').value = key;
+        initSupabase(url, key);
+      } else {
+        document.getElementById('configPanel').classList.add('show');
+        document.getElementById('authPage').style.display = 'flex';
+      }
+    }
+
+    function saveConfig() {
+      const url = document.getElementById('supabaseUrl').value.trim();
+      const key = document.getElementById('supabaseKey').value.trim();
+      if (!url || !key) {
+        showToast('请填写完整的配置信息', 'error');
+        return;
+      }
+      localStorage.setItem('supabase_url', url);
+      localStorage.setItem('supabase_key', key);
+      initSupabase(url, key);
+      document.getElementById('configPanel').classList.remove('show');
+      showToast('配置保存成功');
+    }
+
+    function toggleConfig() {
+      document.getElementById('configPanel').classList.toggle('show');
+    }
+
+    async function initSupabase(url, key) {
+      try {
+        supabaseClient = window.supabase.createClient(url, key);
+
+        // Listen for auth state changes
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+          currentUser = session?.user || null;
+          updateUIForAuth();
+        });
+
+        // Check current session
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        currentUser = session?.user || null;
+        updateUIForAuth();
+
+        if (currentUser) {
+          await loadAllData();
+          showToast('连接成功');
+        }
+      } catch (err) {
+        showToast('连接失败: ' + err.message, 'error');
+      }
+    }
+
+    function updateUIForAuth() {
+      const authPage = document.getElementById('authPage');
+      const mainApp = document.getElementById('mainApp');
+      const userEmail = document.getElementById('userEmail');
+
+      if (currentUser) {
+        authPage.style.display = 'none';
+        mainApp.style.display = 'block';
+        userEmail.textContent = currentUser.email;
+        loadAllData();
+      } else {
+        authPage.style.display = 'flex';
+        mainApp.style.display = 'none';
+        userEmail.textContent = '';
+      }
+    }
+
+    // ========== Data Loading ==========
+    async function loadAllData() {
+      await Promise.all([
+        loadTasks(),
+        loadDailyLogs(),
+        loadPlans(),
+        loadNotes()
+      ]);
+    }
+
+    async function loadTasks() {
+      const { data, error } = await supabaseClient
+        .from('tasks')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) {
+        showToast('加载任务失败', 'error');
+        return;
+      }
+      tasks = data || [];
+      renderTasks();
+    }
+
+    async function loadDailyLogs() {
+      const { data, error } = await supabaseClient
+        .from('daily_logs')
+        .select('*');
+      if (error) return;
+      dailyLogs = {};
+      (data || []).forEach(log => {
+        dailyLogs[log.date] = log;
+      });
+      renderCalendar();
+      loadLogForDate(currentLogDate);
+    }
+
+    async function loadPlans() {
+      const { data, error } = await supabaseClient
+        .from('plans')
+        .select('*')
+        .order('target_date', { ascending: true });
+      if (error) return;
+      plans = data || [];
+      renderPlans();
+    }
+
+    async function loadNotes() {
+      const { data, error } = await supabaseClient
+        .from('notes')
+        .select('*')
+        .order('is_pinned', { ascending: false })
+        .order('updated_at', { ascending: false });
+      if (error) return;
+      notes = data || [];
+      renderNotes();
+    }
+
+    // ========== Tab Navigation ==========
+    function initTabs() {
+      document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const target = tab.dataset.tab;
+          switchTab(target);
+        });
+      });
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+      document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+    }
+
+    // ========== Kanban / Tasks ==========
+    function renderTasks() {
+      const todoTasks = tasks.filter(t => t.status === 'todo');
+      const doingTasks = tasks.filter(t => t.status === 'doing');
+      const doneTasks = tasks.filter(t => t.status === 'done');
+
+      document.getElementById('todoCount').textContent = todoTasks.length;
+      document.getElementById('doingCount').textContent = doingTasks.length;
+      document.getElementById('doneCount').textContent = doneTasks.length;
+
+      document.getElementById('todoList').innerHTML = todoTasks.map(t => taskCardHTML(t)).join('');
+      document.getElementById('doingList').innerHTML = doingTasks.map(t => taskCardHTML(t)).join('');
+      document.getElementById('doneList').innerHTML = doneTasks.map(t => taskCardHTML(t)).join('');
+    }
+
+    function taskCardHTML(task) {
+      const priorityClass = `priority-${task.priority}`;
+      const priorityLabel = { low: '低', medium: '中', high: '高' }[task.priority];
+      const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString('zh-CN') : '';
+      const statusButtons = task.status !== 'done' ?
+        `<button onclick="moveTask('${task.id}', '${task.status === 'todo' ? 'doing' : 'done'}')" title="移动到下一阶段">▶</button>` : '';
+
+      return `
+        <div class="kanban-card" onclick="editTask('${task.id}')">
+          <div class="kanban-card-title">${escapeHtml(task.title)}</div>
+          ${task.description ? `<div class="kanban-card-desc">${escapeHtml(task.description)}</div>` : ''}
+          <div class="kanban-card-meta">
+            <span class="priority-badge ${priorityClass}">${priorityLabel}</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              ${dueDate ? `<span>${dueDate}</span>` : ''}
+              <div class="kanban-card-actions" onclick="event.stopPropagation()">
+                ${statusButtons}
+                <button onclick="editTask('${task.id}')" title="编辑">✏️</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function toggleAddForm(status) {
+      const formId = `add${status.charAt(0).toUpperCase() + status.slice(1)}Form`;
+      const form = document.getElementById(formId);
+      form.classList.toggle('show');
+      if (form.classList.contains('show')) {
+        form.querySelector('input').focus();
+      }
+    }
+
+    async function addTask(status) {
+      const prefix = status;
+      const title = document.getElementById(`${prefix}Title`).value.trim();
+      if (!title) {
+        showToast('请输入任务标题', 'error');
+        return;
+      }
+
+      const task = {
+        title,
+        description: document.getElementById(`${prefix}Desc`).value.trim(),
+        status,
+        priority: document.getElementById(`${prefix}Priority`).value,
+        due_date: document.getElementById(`${prefix}DueDate`).value || null,
+        user_id: currentUser.id
+      };
+
+      const { error } = await supabaseClient.from('tasks').insert(task);
+      if (error) {
+        showToast('添加失败', 'error');
+        return;
+      }
+
+      // Clear form
+      document.getElementById(`${prefix}Title`).value = '';
+      document.getElementById(`${prefix}Desc`).value = '';
+      document.getElementById(`${prefix}DueDate`).value = '';
+      toggleAddForm(status);
+
+      await loadTasks();
+      showToast('任务已添加');
+    }
+
+    async function moveTask(id, newStatus) {
+      const { error } = await supabaseClient
+        .from('tasks')
+        .update({ status: newStatus })
+        .eq('id', id);
+      if (error) {
+        showToast('更新失败', 'error');
+        return;
+      }
+      await loadTasks();
+    }
+
+    function editTask(id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+      currentTaskId = id;
+      document.getElementById('editTaskTitle').value = task.title;
+      document.getElementById('editTaskDesc').value = task.description || '';
+      document.getElementById('editTaskStatus').value = task.status;
+      document.getElementById('editTaskPriority').value = task.priority;
+      document.getElementById('editTaskDueDate').value = task.due_date || '';
+      document.getElementById('taskModal').classList.add('show');
+    }
+
+    function hideTaskModal() {
+      document.getElementById('taskModal').classList.remove('show');
+      currentTaskId = null;
+    }
+
+    async function updateTask() {
+      if (!currentTaskId) return;
+      const updates = {
+        title: document.getElementById('editTaskTitle').value.trim(),
+        description: document.getElementById('editTaskDesc').value.trim(),
+        status: document.getElementById('editTaskStatus').value,
+        priority: document.getElementById('editTaskPriority').value,
+        due_date: document.getElementById('editTaskDueDate').value || null
+      };
+
+      if (!updates.title) {
+        showToast('任务标题不能为空', 'error');
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from('tasks')
+        .update(updates)
+        .eq('id', currentTaskId);
+
+      if (error) {
+        showToast('更新失败', 'error');
+        return;
+      }
+
+      hideTaskModal();
+      await loadTasks();
+      showToast('任务已更新');
+    }
+
+    async function deleteTask() {
+      if (!currentTaskId) return;
+      if (!confirm('确定要删除这个任务吗？')) return;
+
+      const { error } = await supabaseClient
+        .from('tasks')
+        .delete()
+        .eq('id', currentTaskId);
+
+      if (error) {
+        showToast('删除失败', 'error');
+        return;
+      }
+
+      hideTaskModal();
+      await loadTasks();
+      showToast('任务已删除');
+    }
+
+    // ========== Daily Log ==========
+    function renderCalendar() {
+      const year = calendarDate.getFullYear();
+      const month = calendarDate.getMonth();
+      document.getElementById('calendarTitle').textContent =
+        `${year}年${month + 1}月`;
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startDay = firstDay.getDay();
+      const totalDays = lastDay.getDate();
+
+      let html = '';
+      const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+      dayNames.forEach(d => {
+        html += `<div class="calendar-day-header">${d}</div>`;
+      });
+
+      // Empty cells before first day
+      for (let i = 0; i < startDay; i++) {
+        html += '<div class="calendar-day"></div>';
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+
+      for (let day = 1; day <= totalDays; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isToday = dateStr === today;
+        const hasLog = dailyLogs[dateStr];
+        const classes = ['calendar-day'];
+        if (isToday) classes.push('today');
+        if (hasLog) classes.push('has-log');
+        if (dateStr === currentLogDate) classes.push('active');
+
+        html += `<div class="${classes.join(' ')}" onclick="selectDate('${dateStr}')">${day}</div>`;
+      }
+
+      document.getElementById('calendarGrid').innerHTML = html;
+    }
+
+    function changeMonth(delta) {
+      calendarDate.setMonth(calendarDate.getMonth() + delta);
+      renderCalendar();
+    }
+
+    function selectDate(dateStr) {
+      currentLogDate = dateStr;
+      renderCalendar();
+      loadLogForDate(dateStr);
+    }
+
+    function loadLogForDate(dateStr) {
+      const log = dailyLogs[dateStr];
+      const date = new Date(dateStr);
+      document.getElementById('logDateTitle').textContent =
+        date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+
+      document.getElementById('logContent').value = log ? log.content || '' : '';
+
+      // Update mood buttons
+      document.querySelectorAll('.mood-btn').forEach(btn => {
+        btn.classList.toggle('active', log && log.mood === btn.dataset.mood);
+      });
+    }
+
+    function selectMood(mood) {
+      document.querySelectorAll('.mood-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mood === mood);
+      });
+    }
+
+    async function saveDailyLog() {
+      const content = document.getElementById('logContent').value.trim();
+      const activeMood = document.querySelector('.mood-btn.active');
+      const mood = activeMood ? activeMood.dataset.mood : null;
+
+      if (!content && !mood) {
+        showToast('请输入内容或选择心情', 'error');
+        return;
+      }
+
+      const existing = dailyLogs[currentLogDate];
+      if (existing) {
+        const { error } = await supabaseClient
+          .from('daily_logs')
+          .update({ content, mood })
+          .eq('id', existing.id);
+        if (error) {
+          showToast('保存失败', 'error');
+          return;
+        }
+      } else {
+        const { error } = await supabaseClient
+          .from('daily_logs')
+          .insert({ date: currentLogDate, content, mood, user_id: currentUser.id });
+        if (error) {
+          showToast('保存失败', 'error');
+          return;
+        }
+      }
+
+      await loadDailyLogs();
+      showToast('日记已保存');
+    }
+
+    // ========== Plans ==========
+    function renderPlans() {
+      const filtered = planFilter === 'all' ? plans : plans.filter(p => p.status === planFilter);
+      const list = document.getElementById('plansList');
+
+      if (filtered.length === 0) {
+        list.innerHTML = '<li style="text-align: center; padding: 40px; color: var(--text-light);">暂无计划</li>';
+        return;
+      }
+
+      list.innerHTML = filtered.map(plan => {
+        const statusLabel = {
+          pending: '待开始',
+          in_progress: '进行中',
+          completed: '已完成',
+          cancelled: '已取消'
+        }[plan.status];
+
+        const targetDate = plan.target_date ?
+          new Date(plan.target_date).toLocaleDateString('zh-CN') : '无截止日期';
+
+        return `
+          <li class="plan-item">
+            <div class="plan-status-indicator status-${plan.status}"></div>
+            <div class="plan-info">
+              <div class="plan-title">${escapeHtml(plan.title)}</div>
+              <div class="plan-meta">
+                ${plan.description ? escapeHtml(plan.description) + ' · ' : ''}
+                ${targetDate} · ${statusLabel}
+              </div>
+            </div>
+            <div class="plan-actions">
+              <button class="btn btn-sm btn-secondary" onclick="editPlan('${plan.id}')">编辑</button>
+              <button class="btn btn-sm btn-danger" onclick="deletePlan('${plan.id}')">删除</button>
+            </div>
+          </li>
+        `;
+      }).join('');
+    }
+
+    function filterPlans(filter) {
+      planFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === filter);
+      });
+      renderPlans();
+    }
+
+    function showPlanModal(planId = null) {
+      currentPlanId = planId;
+      const modal = document.getElementById('planModal');
+      const title = document.getElementById('planModalTitle');
+
+      if (planId) {
+        const plan = plans.find(p => p.id === planId);
+        if (!plan) return;
+        title.textContent = '编辑计划';
+        document.getElementById('planTitle').value = plan.title;
+        document.getElementById('planDesc').value = plan.description || '';
+        document.getElementById('planTargetDate').value = plan.target_date || '';
+        document.getElementById('planStatus').value = plan.status;
+      } else {
+        title.textContent = '新建计划';
+        document.getElementById('planTitle').value = '';
+        document.getElementById('planDesc').value = '';
+        document.getElementById('planTargetDate').value = '';
+        document.getElementById('planStatus').value = 'pending';
+      }
+
+      modal.classList.add('show');
+    }
+
+    function hidePlanModal() {
+      document.getElementById('planModal').classList.remove('show');
+      currentPlanId = null;
+    }
+
+    async function savePlan() {
+      const title = document.getElementById('planTitle').value.trim();
+      if (!title) {
+        showToast('请输入计划标题', 'error');
+        return;
+      }
+
+      const planData = {
+        title,
+        description: document.getElementById('planDesc').value.trim(),
+        target_date: document.getElementById('planTargetDate').value || null,
+        status: document.getElementById('planStatus').value,
+        user_id: currentUser.id
+      };
+
+      if (currentPlanId) {
+        const { error } = await supabaseClient
+          .from('plans')
+          .update(planData)
+          .eq('id', currentPlanId);
+        if (error) {
+          showToast('更新失败', 'error');
+          return;
+        }
+      } else {
+        const { error } = await supabaseClient
+          .from('plans')
+          .insert(planData);
+        if (error) {
+          showToast('创建失败', 'error');
+          return;
+        }
+      }
+
+      hidePlanModal();
+      await loadPlans();
+      showToast(currentPlanId ? '计划已更新' : '计划已创建');
+    }
+
+    function editPlan(id) {
+      showPlanModal(id);
+    }
+
+    async function deletePlan(id) {
+      if (!confirm('确定要删除这个计划吗？')) return;
+
+      const { error } = await supabaseClient
+        .from('plans')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        showToast('删除失败', 'error');
+        return;
+      }
+
+      await loadPlans();
+      showToast('计划已删除');
+    }
+
+    // ========== Notes ==========
+    function renderNotes() {
+      const list = document.getElementById('notesListItems');
+      if (notes.length === 0) {
+        list.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-light);">暂无笔记</div>';
+        return;
+      }
+
+      list.innerHTML = notes.map(note => {
+        const preview = note.content ? note.content.substring(0, 50) + (note.content.length > 50 ? '...' : '') : '空笔记';
+        const date = new Date(note.updated_at).toLocaleDateString('zh-CN');
+        const tags = note.tags && note.tags.length > 0 ? note.tags.join(', ') : '';
+
+        return `
+          <div class="note-item ${note.id === currentNoteId ? 'active' : ''}" onclick="selectNote('${note.id}')">
+            <div class="note-item-title">${note.is_pinned ? '📌 ' : ''}${escapeHtml(note.title)}</div>
+            <div class="note-item-preview">${escapeHtml(preview)}</div>
+            <div class="note-item-meta">${date}${tags ? ' · ' + tags : ''}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectNote(id) {
+      currentNoteId = id;
+      const note = notes.find(n => n.id === id);
+      if (!note) return;
+
+      document.getElementById('noteTitle').value = note.title;
+      document.getElementById('noteContent').value = note.content || '';
+      document.getElementById('noteTags').value = note.tags ? note.tags.join(', ') : '';
+      document.getElementById('pinBtn').textContent = note.is_pinned ? '📌 取消置顶' : '📌 置顶';
+      renderNotes();
+    }
+
+    async function createNote() {
+      const { data, error } = await supabaseClient
+        .from('notes')
+        .insert({ title: '新笔记', content: '', tags: [], is_pinned: false, user_id: currentUser.id })
+        .select()
+        .single();
+
+      if (error) {
+        showToast('创建失败', 'error');
+        return;
+      }
+
+      await loadNotes();
+      selectNote(data.id);
+      showToast('笔记已创建');
+    }
+
+    async function saveNote() {
+      if (!currentNoteId) return;
+
+      const title = document.getElementById('noteTitle').value.trim() || '未命名笔记';
+      const content = document.getElementById('noteContent').value;
+      const tagsStr = document.getElementById('noteTags').value.trim();
+      const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(t => t) : [];
+
+      const { error } = await supabaseClient
+        .from('notes')
+        .update({ title, content, tags })
+        .eq('id', currentNoteId);
+
+      if (error) {
+        showToast('保存失败', 'error');
+        return;
+      }
+
+      await loadNotes();
+      showToast('笔记已保存');
+    }
+
+    async function togglePin() {
+      if (!currentNoteId) return;
+      const note = notes.find(n => n.id === currentNoteId);
+      if (!note) return;
+
+      const { error } = await supabaseClient
+        .from('notes')
+        .update({ is_pinned: !note.is_pinned })
+        .eq('id', currentNoteId);
+
+      if (error) {
+        showToast('操作失败', 'error');
+        return;
+      }
+
+      await loadNotes();
+      selectNote(currentNoteId);
+    }
+
+    async function deleteNote() {
+      if (!currentNoteId) return;
+      if (!confirm('确定要删除这个笔记吗？')) return;
+
+      const { error } = await supabaseClient
+        .from('notes')
+        .delete()
+        .eq('id', currentNoteId);
+
+      if (error) {
+        showToast('删除失败', 'error');
+        return;
+      }
+
+      currentNoteId = null;
+      document.getElementById('noteTitle').value = '';
+      document.getElementById('noteContent').value = '';
+      document.getElementById('noteTags').value = '';
+      await loadNotes();
+      showToast('笔记已删除');
+    }
+
+    // ========== Utilities ==========
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast ${type} show`;
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // Auto-save for notes (debounced)
+    let noteSaveTimeout = null;
+    document.getElementById('noteContent').addEventListener('input', () => {
+      if (noteSaveTimeout) clearTimeout(noteSaveTimeout);
+      noteSaveTimeout = setTimeout(() => {
+        if (currentNoteId) saveNote();
+      }, 1000);
+    });
+    document.getElementById('noteTitle').addEventListener('input', () => {
+      if (noteSaveTimeout) clearTimeout(noteSaveTimeout);
+      noteSaveTimeout = setTimeout(() => {
+        if (currentNoteId) saveNote();
+      }, 1000);
+    });
+
+    // ========== Auth Functions ==========
+    function showLogin() {
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('registerForm').style.display = 'none';
+      document.getElementById('resetForm').style.display = 'none';
+      document.getElementById('toRegister').style.display = 'inline';
+      document.getElementById('toLogin').style.display = 'none';
+      document.getElementById('toReset').style.display = 'inline';
+      document.getElementById('backToLogin').style.display = 'none';
+      document.getElementById('authSubtitle').textContent = '登录以访问你的工作台';
+      clearAuthMessages();
+    }
+
+    function showRegister() {
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('registerForm').style.display = 'block';
+      document.getElementById('resetForm').style.display = 'none';
+      document.getElementById('toRegister').style.display = 'none';
+      document.getElementById('toLogin').style.display = 'inline';
+      document.getElementById('toReset').style.display = 'none';
+      document.getElementById('backToLogin').style.display = 'none';
+      document.getElementById('authSubtitle').textContent = '创建新账号';
+      clearAuthMessages();
+    }
+
+    function showReset() {
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('registerForm').style.display = 'none';
+      document.getElementById('resetForm').style.display = 'block';
+      document.getElementById('toRegister').style.display = 'none';
+      document.getElementById('toLogin').style.display = 'none';
+      document.getElementById('toReset').style.display = 'none';
+      document.getElementById('backToLogin').style.display = 'inline';
+      document.getElementById('authSubtitle').textContent = '重置密码';
+      clearAuthMessages();
+    }
+
+    function clearAuthMessages() {
+      document.getElementById('authError').classList.remove('show');
+      document.getElementById('authSuccess').classList.remove('show');
+    }
+
+    function showAuthError(message) {
+      const el = document.getElementById('authError');
+      el.textContent = message;
+      el.classList.add('show');
+    }
+
+    function showAuthSuccess(message) {
+      const el = document.getElementById('authSuccess');
+      el.textContent = message;
+      el.classList.add('show');
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      clearAuthMessages();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      if (!email || !password) {
+        showAuthError('请填写邮箱和密码');
+        return;
+      }
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        showAuthError(error.message === 'Invalid login credentials' ? '邮箱或密码错误' : error.message);
+        return;
+      }
+
+      currentUser = data.user;
+      showToast('登录成功');
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      clearAuthMessages();
+      const email = document.getElementById('registerEmail').value.trim();
+      const password = document.getElementById('registerPassword').value;
+      const confirm = document.getElementById('registerConfirm').value;
+
+      if (!email || !password || !confirm) {
+        showAuthError('请填写所有字段');
+        return;
+      }
+
+      if (password !== confirm) {
+        showAuthError('两次密码不一致');
+        return;
+      }
+
+      if (password.length < 6) {
+        showAuthError('密码至少需要6位');
+        return;
+      }
+
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password
+      });
+
+      if (error) {
+        showAuthError(error.message);
+        return;
+      }
+
+      if (data.user?.identities?.length === 0) {
+        showAuthError('该邮箱已注册');
+        return;
+      }
+
+      showAuthSuccess('注册成功！请检查邮箱进行验证');
+    }
+
+    async function handleReset(e) {
+      e.preventDefault();
+      clearAuthMessages();
+      const email = document.getElementById('resetEmail').value.trim();
+
+      if (!email) {
+        showAuthError('请输入邮箱');
+        return;
+      }
+
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + window.location.pathname
+      });
+
+      if (error) {
+        showAuthError(error.message);
+        return;
+      }
+
+      showAuthSuccess('重置邮件已发送，请检查邮箱');
+    }
+
+    async function handleLogout() {
+      if (!confirm('确定要退出登录吗？')) return;
+
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) {
+        showToast('退出失败', 'error');
+        return;
+      }
+
+      currentUser = null;
+      tasks = [];
+      dailyLogs = {};
+      plans = [];
+      notes = [];
+      showToast('已退出登录');
+    }
+  </script>
+</body>
+</html>
