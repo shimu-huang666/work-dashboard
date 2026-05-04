@@ -1361,7 +1361,7 @@
           </div>
           <div class="settings-field">
             <label>API 端点</label>
-            <input type="text" id="settingsEndpoint" readonly>
+            <input type="text" id="settingsEndpoint" placeholder="API 端点地址">
           </div>
           <div class="settings-actions">
             <button class="btn btn-primary" onclick="saveAISettings()">保存配置</button>
@@ -2433,6 +2433,7 @@
     // ========== AI Assistant ==========
     const AI_PROVIDER_KEY = 'ai_provider';
     const AI_API_KEY_PREFIX = 'ai_key_';
+    const AI_ENDPOINT_KEY = 'ai_endpoint_';
 
     const AI_PROVIDERS = {
       claude: {
@@ -2471,16 +2472,25 @@
       localStorage.setItem(AI_API_KEY_PREFIX + provider, key);
     }
 
+    function getEndpoint(provider) {
+      const custom = localStorage.getItem(AI_ENDPOINT_KEY + (provider || getProvider()));
+      return custom || AI_PROVIDERS[provider || getProvider()].endpoint;
+    }
+
+    function setEndpoint(provider, endpoint) {
+      localStorage.setItem(AI_ENDPOINT_KEY + provider, endpoint);
+    }
+
     // Settings page functions
     function initSettings() {
       const provider = getProvider();
       document.getElementById('settingsProvider').value = provider;
       document.getElementById('settingsApiKey').value = getApiKey(provider);
-      document.getElementById('settingsEndpoint').value = AI_PROVIDERS[provider].endpoint;
+      document.getElementById('settingsEndpoint').value = getEndpoint(provider);
 
       document.getElementById('settingsProvider').addEventListener('change', (e) => {
         const newProvider = e.target.value;
-        document.getElementById('settingsEndpoint').value = AI_PROVIDERS[newProvider].endpoint;
+        document.getElementById('settingsEndpoint').value = getEndpoint(newProvider);
         document.getElementById('settingsApiKey').value = getApiKey(newProvider);
       });
     }
@@ -2488,14 +2498,21 @@
     function saveAISettings() {
       const provider = document.getElementById('settingsProvider').value;
       const apiKey = document.getElementById('settingsApiKey').value.trim();
+      const endpoint = document.getElementById('settingsEndpoint').value.trim();
 
       if (!apiKey) {
         showToast('请输入 API Key', 'error');
         return;
       }
 
+      if (!endpoint) {
+        showToast('请输入 API 端点', 'error');
+        return;
+      }
+
       setProvider(provider);
       setApiKey(provider, apiKey);
+      setEndpoint(provider, endpoint);
       showToast('AI 配置已保存');
     }
 
@@ -2548,9 +2565,10 @@
 
       try {
         let response;
+        const endpoint = getEndpoint(provider);
 
         if (provider === 'claude') {
-          response = await fetch(AI_PROVIDERS.claude.endpoint, {
+          response = await fetch(endpoint, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -2573,7 +2591,7 @@
           const data = await response.json();
           return data.content[0].text;
         } else if (provider === 'deepseek') {
-          response = await fetch(AI_PROVIDERS.deepseek.endpoint, {
+          response = await fetch(endpoint, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -2594,7 +2612,7 @@
           const data = await response.json();
           return data.choices[0].message.content;
         } else if (provider === 'mimo') {
-          response = await fetch(AI_PROVIDERS.mimo.endpoint, {
+          response = await fetch(endpoint, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
