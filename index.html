@@ -188,6 +188,16 @@
     .priority-high { background: #FEE2E2; color: #DC2626; }
     .priority-medium { background: #FEF3C7; color: #D97706; }
     .priority-low { background: #D1FAE5; color: #059669; }
+    .due-date-badge {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .due-date-badge.overdue { background: #FEE2E2; color: #DC2626; }
+    .due-date-badge.today { background: #FEF3C7; color: #D97706; }
+    .due-date-badge.soon { background: #DBEAFE; color: #2563EB; }
+    .due-date-badge.normal { background: #F3F4F6; color: #6B7280; }
     .kanban-card-actions {
       display: flex;
       gap: 4px;
@@ -1140,9 +1150,30 @@
     function taskCardHTML(task) {
       const priorityClass = `priority-${task.priority}`;
       const priorityLabel = { low: '低', medium: '中', high: '高' }[task.priority];
-      const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString('zh-CN') : '';
+      const dueDate = task.due_date ? new Date(task.due_date) : null;
       const statusButtons = task.status !== 'done' ?
         `<button onclick="moveTask('${task.id}', '${task.status === 'todo' ? 'doing' : 'done'}')" title="移动到下一阶段">▶</button>` : '';
+
+      // 计算截止时间状态
+      let dueDateBadge = '';
+      if (dueDate && task.status !== 'done') {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+        const dateStr = dueDate.toLocaleDateString('zh-CN');
+
+        if (diffDays < 0) {
+          dueDateBadge = `<span class="due-date-badge overdue">已过期 ${Math.abs(diffDays)} 天</span>`;
+        } else if (diffDays === 0) {
+          dueDateBadge = `<span class="due-date-badge today">今天截止</span>`;
+        } else if (diffDays <= 3) {
+          dueDateBadge = `<span class="due-date-badge soon">还剩 ${diffDays} 天</span>`;
+        } else {
+          dueDateBadge = `<span class="due-date-badge normal">${dateStr}</span>`;
+        }
+      } else if (dueDate) {
+        dueDateBadge = `<span class="due-date-badge normal">${dueDate.toLocaleDateString('zh-CN')}</span>`;
+      }
 
       return `
         <div class="kanban-card" onclick="editTask('${task.id}')">
@@ -1151,7 +1182,7 @@
           <div class="kanban-card-meta">
             <span class="priority-badge ${priorityClass}">${priorityLabel}</span>
             <div style="display: flex; align-items: center; gap: 8px;">
-              ${dueDate ? `<span>${dueDate}</span>` : ''}
+              ${dueDateBadge}
               <div class="kanban-card-actions" onclick="event.stopPropagation()">
                 ${statusButtons}
                 <button onclick="editTask('${task.id}')" title="编辑">✏️</button>
