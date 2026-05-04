@@ -618,6 +618,80 @@
       animation: spin 1s linear infinite;
       margin-right: 4px;
     }
+
+    /* ========== Settings ========== */
+    .settings-container {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      max-width: 600px;
+    }
+    .settings-container h3 {
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-section {
+      margin-bottom: 16px;
+    }
+    .settings-field {
+      margin-bottom: 16px;
+    }
+    .settings-field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: var(--text-light);
+    }
+    .settings-field input,
+    .settings-field select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .settings-field input:focus,
+    .settings-field select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    .settings-key-group {
+      display: flex;
+      gap: 8px;
+    }
+    .settings-key-group input {
+      flex: 1;
+    }
+    .settings-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .settings-info {
+      background: var(--bg);
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    .settings-info h4 {
+      margin-bottom: 8px;
+      color: var(--primary);
+    }
+    .settings-info p {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+    .settings-info a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .settings-info a:hover {
+      text-decoration: underline;
+    }
     .notes-list {
       background: var(--card);
       border-radius: var(--radius);
@@ -1062,6 +1136,7 @@
       <button class="nav-tab" data-tab="plans">🎯 计划</button>
       <button class="nav-tab" data-tab="goals">🏆 目标</button>
       <button class="nav-tab" data-tab="notes">📝 笔记</button>
+      <button class="nav-tab" data-tab="settings">⚙️ 设置</button>
     </nav>
 
     <!-- Dashboard Content -->
@@ -1264,9 +1339,60 @@
       </div>
     </div>
 
+    <!-- Settings Content -->
+    <div class="content" id="settings">
+      <div class="settings-container">
+        <h3>AI 配置</h3>
+        <div class="settings-section">
+          <div class="settings-field">
+            <label>AI 服务提供商</label>
+            <select id="settingsProvider">
+              <option value="claude">Claude</option>
+              <option value="deepseek">Deepseek</option>
+              <option value="mimo">MIMO (小米)</option>
+            </select>
+          </div>
+          <div class="settings-field">
+            <label>API Key</label>
+            <div class="settings-key-group">
+              <input type="password" id="settingsApiKey" placeholder="输入 API Key">
+              <button class="btn btn-sm btn-secondary" onclick="toggleKeyVisibility()">👁️</button>
+            </div>
+          </div>
+          <div class="settings-field">
+            <label>API 端点</label>
+            <input type="text" id="settingsEndpoint" readonly>
+          </div>
+          <div class="settings-actions">
+            <button class="btn btn-primary" onclick="saveAISettings()">保存配置</button>
+            <button class="btn btn-secondary" onclick="testAIConnection()">测试连接</button>
+          </div>
+        </div>
+
+        <h3 style="margin-top: 32px;">使用说明</h3>
+        <div class="settings-section">
+          <div class="settings-info">
+            <h4>Claude</h4>
+            <p>获取 API Key: <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
+            <p>Key 格式: sk-ant-...</p>
+          </div>
+          <div class="settings-info">
+            <h4>Deepseek</h4>
+            <p>获取 API Key: <a href="https://platform.deepseek.com" target="_blank">platform.deepseek.com</a></p>
+            <p>Key 格式: sk-...</p>
+          </div>
+          <div class="settings-info">
+            <h4>MIMO (小米)</h4>
+            <p>获取 API Key: <a href="https://mimo.xiaomi.com" target="_blank">mimo.xiaomi.com</a></p>
+            <p>Key 格式: sk-...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Footer -->
     <footer class="footer">
-      <p>个人工作台 v2.0.0 | 作者: 时慕</p>
+      <p>个人工作台 v2.1.0 | 作者: 时慕</p>
     </footer>
   </div>
 
@@ -1389,6 +1515,7 @@
       updateCurrentDate();
       loadConfig();
       initTabs();
+      initSettings();
     });
 
     function updateCurrentDate() {
@@ -2344,24 +2471,70 @@
       localStorage.setItem(AI_API_KEY_PREFIX + provider, key);
     }
 
+    // Settings page functions
+    function initSettings() {
+      const provider = getProvider();
+      document.getElementById('settingsProvider').value = provider;
+      document.getElementById('settingsApiKey').value = getApiKey(provider);
+      document.getElementById('settingsEndpoint').value = AI_PROVIDERS[provider].endpoint;
+
+      document.getElementById('settingsProvider').addEventListener('change', (e) => {
+        const newProvider = e.target.value;
+        document.getElementById('settingsEndpoint').value = AI_PROVIDERS[newProvider].endpoint;
+        document.getElementById('settingsApiKey').value = getApiKey(newProvider);
+      });
+    }
+
+    function saveAISettings() {
+      const provider = document.getElementById('settingsProvider').value;
+      const apiKey = document.getElementById('settingsApiKey').value.trim();
+
+      if (!apiKey) {
+        showToast('请输入 API Key', 'error');
+        return;
+      }
+
+      setProvider(provider);
+      setApiKey(provider, apiKey);
+      showToast('AI 配置已保存');
+    }
+
+    function toggleKeyVisibility() {
+      const input = document.getElementById('settingsApiKey');
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    async function testAIConnection() {
+      const provider = document.getElementById('settingsProvider').value;
+      const apiKey = document.getElementById('settingsApiKey').value.trim();
+
+      if (!apiKey) {
+        showToast('请先输入 API Key', 'error');
+        return;
+      }
+
+      const btn = event.target;
+      btn.disabled = true;
+      btn.textContent = '测试中...';
+
+      // Save settings first
+      setProvider(provider);
+      setApiKey(provider, apiKey);
+
+      const result = await callAIAPI('你好，请回复"连接成功"两个字');
+
+      btn.disabled = false;
+      btn.textContent = '测试连接';
+
+      if (result) {
+        showToast('连接成功: ' + result.substring(0, 50));
+      }
+    }
+
     function promptAIConfig() {
-      const currentProvider = getProvider();
-      const currentKey = getApiKey(currentProvider);
-
-      const provider = prompt('选择 AI 服务:\n1=Claude\n2=Deepseek\n3=MIMO (小米)\n当前: ' + AI_PROVIDERS[currentProvider].name, currentProvider === 'claude' ? '1' : currentProvider === 'deepseek' ? '2' : '3');
-      if (!provider) return null;
-
-      let selectedProvider;
-      if (provider === '1') selectedProvider = 'claude';
-      else if (provider === '2') selectedProvider = 'deepseek';
-      else selectedProvider = 'mimo';
-
-      const key = prompt(`请输入 ${AI_PROVIDERS[selectedProvider].name} API Key:`, getApiKey(selectedProvider));
-      if (!key) return null;
-
-      setProvider(selectedProvider);
-      setApiKey(selectedProvider, key);
-      return { provider: selectedProvider, key };
+      switchTab('settings');
+      showToast('请在设置页面配置 AI 服务');
+      return null;
     }
 
     async function callAIAPI(prompt) {
@@ -2369,9 +2542,8 @@
       let apiKey = getApiKey(provider);
 
       if (!apiKey) {
-        const config = promptAIConfig();
-        if (!config) return null;
-        apiKey = config.key;
+        promptAIConfig();
+        return null;
       }
 
       try {
