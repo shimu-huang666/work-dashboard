@@ -7,6 +7,8 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Marked.js for Markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     /* ========== CSS Reset & Base ========== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -122,6 +124,19 @@
     .content.active { display: block; }
 
     /* ========== Kanban Board ========== */
+    .kanban-toolbar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .kanban-search,
+    .kanban-tag-filter {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+    }
     .kanban {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -211,6 +226,31 @@
       border-radius: 4px;
     }
     .task-date.created { background: #F3F4F6; color: #6B7280; }
+    .task-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin: 8px 0;
+    }
+    .task-tag {
+      padding: 2px 8px;
+      background: #E0E7FF;
+      color: #4338CA;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+    .kanban-card[draggable="true"] {
+      cursor: grab;
+    }
+    .kanban-card[draggable="true"]:active {
+      cursor: grabbing;
+    }
+    .kanban-card.dragging {
+      opacity: 0.5;
+    }
+    .kanban-column.drag-over {
+      background: #F0F9FF;
+    }
     .kanban-card-actions {
       display: flex;
       gap: 4px;
@@ -415,6 +455,169 @@
       grid-template-columns: 300px 1fr;
       gap: 20px;
     }
+
+    /* ========== Dashboard ========== */
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .dashboard-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+    .dashboard-card h3 {
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+    .dashboard-stats {
+      display: flex;
+      justify-content: space-around;
+    }
+    .stat-item {
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 4px;
+    }
+    .dashboard-item {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .dashboard-item:last-child {
+      border-bottom: none;
+    }
+    .dashboard-item-title {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .dashboard-item-meta {
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    /* ========== Goals ========== */
+    .goals-container {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+    .goals-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .goal-item {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .goal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .goal-title {
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .goal-status {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .goal-status.active { background: #DBEAFE; color: #2563EB; }
+    .goal-status.completed { background: #D1FAE5; color: #059669; }
+    .goal-status.paused { background: #FEF3C7; color: #D97706; }
+    .goal-status.cancelled { background: #FEE2E2; color: #DC2626; }
+    .goal-progress {
+      margin: 12px 0;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+    .progress-text {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-light);
+      margin-top: 4px;
+    }
+    .goal-meta {
+      font-size: 13px;
+      color: var(--text-light);
+      margin-bottom: 12px;
+    }
+    .goal-milestones {
+      margin-top: 12px;
+    }
+    .milestone-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .milestone-item:last-child {
+      border-bottom: none;
+    }
+    .milestone-checkbox {
+      margin-right: 8px;
+    }
+    .milestone-title {
+      flex: 1;
+    }
+    .milestone-title.completed {
+      text-decoration: line-through;
+      color: var(--text-light);
+    }
+    .goal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    /* ========== AI Toolbar ========== */
+    .ai-toolbar {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 8px;
+      background: var(--bg);
+      border-radius: 6px;
+    }
+    .ai-loading {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 4px;
+    }
     .notes-list {
       background: var(--card);
       border-radius: var(--radius);
@@ -493,6 +696,62 @@
       line-height: 1.6;
       resize: vertical;
       font-family: inherit;
+    }
+    .note-preview {
+      width: 100%;
+      min-height: 400px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      line-height: 1.6;
+      background: var(--bg);
+      overflow-y: auto;
+    }
+    .note-preview h1, .note-preview h2, .note-preview h3 {
+      margin-top: 16px;
+      margin-bottom: 8px;
+    }
+    .note-preview p {
+      margin-bottom: 12px;
+    }
+    .note-preview code {
+      background: #F3F4F6;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .note-preview pre {
+      background: #1F2937;
+      color: #F9FAFB;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    .note-preview pre code {
+      background: none;
+      color: inherit;
+    }
+    .note-preview blockquote {
+      border-left: 4px solid var(--primary);
+      padding-left: 12px;
+      margin: 12px 0;
+      color: var(--text-light);
+    }
+    .note-preview ul, .note-preview ol {
+      margin: 12px 0;
+      padding-left: 24px;
+    }
+    .note-preview li {
+      margin-bottom: 4px;
+    }
+    .note-preview a {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+    .note-preview img {
+      max-width: 100%;
+      border-radius: 6px;
     }
 
     /* ========== Buttons ========== */
@@ -797,17 +1056,45 @@
 
     <!-- Navigation -->
     <nav class="nav-tabs">
-      <button class="nav-tab active" data-tab="kanban">📋 看板</button>
+      <button class="nav-tab active" data-tab="dashboard">📊 仪表盘</button>
+      <button class="nav-tab" data-tab="kanban">📋 看板</button>
       <button class="nav-tab" data-tab="daily">📅 日记</button>
       <button class="nav-tab" data-tab="plans">🎯 计划</button>
+      <button class="nav-tab" data-tab="goals">🏆 目标</button>
       <button class="nav-tab" data-tab="notes">📝 笔记</button>
     </nav>
 
+    <!-- Dashboard Content -->
+    <div class="content active" id="dashboard">
+      <div class="dashboard">
+        <div class="dashboard-card">
+          <h3>📋 任务概览</h3>
+          <div class="dashboard-stats" id="taskStats"></div>
+        </div>
+        <div class="dashboard-card">
+          <h3>📅 今日计划</h3>
+          <div id="todayPlans"></div>
+        </div>
+        <div class="dashboard-card">
+          <h3>📝 最近笔记</h3>
+          <div id="recentNotes"></div>
+        </div>
+        <div class="dashboard-card">
+          <h3>🏆 目标进度</h3>
+          <div id="goalsProgress"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Kanban Content -->
-    <div class="content active" id="kanban">
+    <div class="content" id="kanban">
+      <div class="kanban-toolbar">
+        <input type="text" class="kanban-search" id="kanbanSearch" placeholder="搜索任务..." oninput="filterTasks()">
+        <input type="text" class="kanban-tag-filter" id="kanbanTagFilter" placeholder="标签筛选（用逗号分隔）" oninput="filterTasks()">
+      </div>
       <div class="kanban">
         <!-- Todo Column -->
-        <div class="kanban-column">
+        <div class="kanban-column" data-status="todo">
           <div class="kanban-column-header">
             <span class="kanban-column-title">📌 待办</span>
             <span class="kanban-count" id="todoCount">0</span>
@@ -826,6 +1113,7 @@
                 <input type="date" id="todoDueDate" style="width:100%;">
               </div>
             </div>
+            <input type="text" id="todoTags" placeholder="标签（用逗号分隔）" style="margin-bottom: 8px;">
             <div class="form-actions">
               <button class="btn btn-secondary btn-sm" onclick="toggleAddForm('todo')">取消</button>
               <button class="btn btn-primary btn-sm" onclick="addTask('todo')">添加</button>
@@ -836,7 +1124,7 @@
         </div>
 
         <!-- Doing Column -->
-        <div class="kanban-column">
+        <div class="kanban-column" data-status="doing">
           <div class="kanban-column-header">
             <span class="kanban-column-title">🔄 进行中</span>
             <span class="kanban-count" id="doingCount">0</span>
@@ -855,6 +1143,7 @@
                 <input type="date" id="doingDueDate" style="width:100%;">
               </div>
             </div>
+            <input type="text" id="doingTags" placeholder="标签（用逗号分隔）" style="margin-bottom: 8px;">
             <div class="form-actions">
               <button class="btn btn-secondary btn-sm" onclick="toggleAddForm('doing')">取消</button>
               <button class="btn btn-primary btn-sm" onclick="addTask('doing')">添加</button>
@@ -865,7 +1154,7 @@
         </div>
 
         <!-- Done Column -->
-        <div class="kanban-column">
+        <div class="kanban-column" data-status="done">
           <div class="kanban-column-header">
             <span class="kanban-column-title">✅ 已完成</span>
             <span class="kanban-count" id="doneCount">0</span>
@@ -898,6 +1187,11 @@
             </div>
           </div>
           <textarea class="log-content" id="logContent" placeholder="记录今天的工作学习内容..."></textarea>
+          <div class="ai-toolbar">
+            <button class="btn btn-sm btn-secondary" onclick="aiAssist('continue')">✨ 续写</button>
+            <button class="btn btn-sm btn-secondary" onclick="aiAssist('polish')">✨ 润色</button>
+            <button class="btn btn-sm btn-secondary" onclick="aiAssist('summarize')">✨ 总结</button>
+          </div>
           <div class="log-actions">
             <button class="btn btn-primary" onclick="saveDailyLog()">保存</button>
           </div>
@@ -924,6 +1218,17 @@
       </div>
     </div>
 
+    <!-- Goals Content -->
+    <div class="content" id="goals">
+      <div class="goals-container">
+        <div class="goals-header">
+          <h3>目标追踪</h3>
+          <button class="btn btn-primary" onclick="showGoalModal()">+ 新建目标</button>
+        </div>
+        <div class="goals-list" id="goalsList"></div>
+      </div>
+    </div>
+
     <!-- Notes Content -->
     <div class="content" id="notes">
       <div class="notes-container">
@@ -938,12 +1243,20 @@
           <div class="note-editor-header">
             <div>
               <button class="btn btn-sm" onclick="togglePin()" id="pinBtn">📌 置顶</button>
+              <button class="btn btn-sm" onclick="toggleNotePreview()" id="previewBtn">👁️ 预览</button>
             </div>
             <button class="btn btn-danger btn-sm" onclick="deleteNote()">删除</button>
           </div>
           <input type="text" class="note-title-input" id="noteTitle" placeholder="笔记标题">
           <input type="text" class="note-tags-input" id="noteTags" placeholder="标签（用逗号分隔）">
-          <textarea class="note-content-input" id="noteContent" placeholder="开始写笔记..."></textarea>
+          <textarea class="note-content-input" id="noteContent" placeholder="开始写笔记...支持 Markdown 语法"></textarea>
+          <div class="note-preview" id="notePreview" style="display: none;"></div>
+          <div class="ai-toolbar">
+            <button class="btn btn-sm btn-secondary" onclick="aiAssistNote('continue')">✨ 续写</button>
+            <button class="btn btn-sm btn-secondary" onclick="aiAssistNote('polish')">✨ 润色</button>
+            <button class="btn btn-sm btn-secondary" onclick="aiAssistNote('summarize')">✨ 总结</button>
+            <button class="btn btn-sm btn-secondary" onclick="aiAssistNote('translate')">✨ 翻译</button>
+          </div>
           <div style="margin-top: 12px; text-align: right;">
             <button class="btn btn-primary" onclick="saveNote()">保存</button>
           </div>
@@ -953,7 +1266,7 @@
 
     <!-- Footer -->
     <footer class="footer">
-      <p>个人工作台 v1.0.0 | 作者: 时慕</p>
+      <p>个人工作台 v2.0.0 | 作者: 时慕</p>
     </footer>
   </div>
 
@@ -997,11 +1310,52 @@
           <option value="high">高优先级</option>
         </select>
         <input type="date" id="editTaskDueDate">
+        <input type="text" id="editTaskTags" placeholder="标签（用逗号分隔）">
       </div>
       <div class="modal-actions">
         <button class="btn btn-danger" onclick="deleteTask()">删除</button>
         <button class="btn btn-secondary" onclick="hideTaskModal()">取消</button>
         <button class="btn btn-primary" onclick="updateTask()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Goal Modal -->
+  <div class="modal-overlay" id="goalModal">
+    <div class="modal">
+      <h3 id="goalModalTitle">新建目标</h3>
+      <div class="modal-form">
+        <input type="text" id="goalTitle" placeholder="目标标题">
+        <textarea id="goalDesc" placeholder="目标描述（可选）"></textarea>
+        <div style="display: flex; gap: 8px;">
+          <input type="number" id="goalTarget" placeholder="目标值" style="flex:1;">
+          <input type="text" id="goalUnit" placeholder="单位（如：次、本、公里）" style="flex:1;">
+        </div>
+        <input type="date" id="goalDeadline">
+        <select id="goalStatus">
+          <option value="active">进行中</option>
+          <option value="completed">已完成</option>
+          <option value="paused">已暂停</option>
+          <option value="cancelled">已取消</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="hideGoalModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveGoal()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Milestone Modal -->
+  <div class="modal-overlay" id="milestoneModal">
+    <div class="modal">
+      <h3>添加里程碑</h3>
+      <div class="modal-form">
+        <input type="text" id="milestoneTitle" placeholder="里程碑标题">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="hideMilestoneModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveMilestone()">保存</button>
       </div>
     </div>
   </div>
@@ -1026,6 +1380,9 @@
     let currentLogDate = new Date().toISOString().split('T')[0];
     let calendarDate = new Date();
     let planFilter = 'all';
+    let goals = [];
+    let milestones = {};
+    let currentGoalId = null;
 
     // ========== Initialization ==========
     document.addEventListener('DOMContentLoaded', () => {
@@ -1097,8 +1454,10 @@
         loadTasks(),
         loadDailyLogs(),
         loadPlans(),
-        loadNotes()
+        loadNotes(),
+        loadGoals()
       ]);
+      renderDashboard();
     }
 
     async function loadTasks() {
@@ -1148,6 +1507,28 @@
       renderNotes();
     }
 
+    async function loadGoals() {
+      const { data, error } = await supabaseClient
+        .from('goals')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) return;
+      goals = data || [];
+
+      // Load milestones for each goal
+      milestones = {};
+      for (const goal of goals) {
+        const { data: msData } = await supabaseClient
+          .from('milestones')
+          .select('*')
+          .eq('goal_id', goal.id)
+          .order('sort_order', { ascending: true });
+        milestones[goal.id] = msData || [];
+      }
+
+      renderGoals();
+    }
+
     // ========== Tab Navigation ==========
     function initTabs() {
       document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -1168,9 +1549,29 @@
 
     // ========== Kanban / Tasks ==========
     function renderTasks() {
-      const todoTasks = tasks.filter(t => t.status === 'todo');
-      const doingTasks = tasks.filter(t => t.status === 'doing');
-      const doneTasks = tasks.filter(t => t.status === 'done');
+      let filteredTasks = tasks;
+
+      // 搜索过滤
+      const searchText = document.getElementById('kanbanSearch')?.value?.toLowerCase() || '';
+      if (searchText) {
+        filteredTasks = filteredTasks.filter(t =>
+          t.title.toLowerCase().includes(searchText) ||
+          (t.description && t.description.toLowerCase().includes(searchText))
+        );
+      }
+
+      // 标签过滤
+      const tagFilter = document.getElementById('kanbanTagFilter')?.value?.trim() || '';
+      if (tagFilter) {
+        const filterTags = tagFilter.split(',').map(t => t.trim().toLowerCase()).filter(t => t);
+        filteredTasks = filteredTasks.filter(t =>
+          t.tags && t.tags.some(tag => filterTags.includes(tag.toLowerCase()))
+        );
+      }
+
+      const todoTasks = filteredTasks.filter(t => t.status === 'todo');
+      const doingTasks = filteredTasks.filter(t => t.status === 'doing');
+      const doneTasks = filteredTasks.filter(t => t.status === 'done');
 
       document.getElementById('todoCount').textContent = todoTasks.length;
       document.getElementById('doingCount').textContent = doingTasks.length;
@@ -1179,6 +1580,9 @@
       document.getElementById('todoList').innerHTML = todoTasks.map(t => taskCardHTML(t)).join('');
       document.getElementById('doingList').innerHTML = doingTasks.map(t => taskCardHTML(t)).join('');
       document.getElementById('doneList').innerHTML = doneTasks.map(t => taskCardHTML(t)).join('');
+
+      // 添加拖拽事件
+      initDragAndDrop();
     }
 
     function taskCardHTML(task) {
@@ -1218,10 +1622,16 @@
       // 格式化创建时间
       const createdAt = task.created_at ? new Date(task.created_at).toLocaleDateString('zh-CN') : '';
 
+      // 格式化标签
+      const tagsHTML = task.tags && task.tags.length > 0
+        ? `<div class="task-tags">${task.tags.map(tag => `<span class="task-tag">${escapeHtml(tag)}</span>`).join('')}</div>`
+        : '';
+
       return `
-        <div class="kanban-card" onclick="editTask('${task.id}')">
+        <div class="kanban-card" draggable="true" data-task-id="${task.id}" onclick="editTask('${task.id}')">
           <div class="kanban-card-title">${escapeHtml(task.title)}</div>
           ${task.description ? `<div class="kanban-card-desc">${escapeHtml(task.description)}</div>` : ''}
+          ${tagsHTML}
           <div class="task-dates">
             ${createdAt ? `<span class="task-date created">创建: ${createdAt}</span>` : ''}
             ${dueDateBadge}
@@ -1247,6 +1657,57 @@
       }
     }
 
+    // ========== Drag and Drop ==========
+    let draggedTaskId = null;
+
+    function filterTasks() {
+      renderTasks();
+    }
+
+    function initDragAndDrop() {
+      const cards = document.querySelectorAll('.kanban-card[draggable="true"]');
+      const columns = document.querySelectorAll('.kanban-column');
+
+      cards.forEach(card => {
+        card.addEventListener('dragstart', (e) => {
+          draggedTaskId = card.dataset.taskId;
+          card.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        card.addEventListener('dragend', () => {
+          card.classList.remove('dragging');
+          draggedTaskId = null;
+          columns.forEach(col => col.classList.remove('drag-over'));
+        });
+      });
+
+      columns.forEach(column => {
+        column.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          column.classList.add('drag-over');
+        });
+
+        column.addEventListener('dragleave', () => {
+          column.classList.remove('drag-over');
+        });
+
+        column.addEventListener('drop', async (e) => {
+          e.preventDefault();
+          column.classList.remove('drag-over');
+
+          if (!draggedTaskId) return;
+
+          const newStatus = column.dataset.status;
+          if (!newStatus) return;
+
+          await moveTask(draggedTaskId, newStatus);
+          draggedTaskId = null;
+        });
+      });
+    }
+
     async function addTask(status) {
       const prefix = status;
       const title = document.getElementById(`${prefix}Title`).value.trim();
@@ -1255,12 +1716,16 @@
         return;
       }
 
+      const tagsStr = document.getElementById(`${prefix}Tags`)?.value?.trim() || '';
+      const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(t => t) : [];
+
       const task = {
         title,
         description: document.getElementById(`${prefix}Desc`).value.trim(),
         status,
         priority: document.getElementById(`${prefix}Priority`).value,
         due_date: document.getElementById(`${prefix}DueDate`).value || null,
+        tags,
         user_id: currentUser.id
       };
 
@@ -1301,6 +1766,7 @@
       document.getElementById('editTaskStatus').value = task.status;
       document.getElementById('editTaskPriority').value = task.priority;
       document.getElementById('editTaskDueDate').value = task.due_date || '';
+      document.getElementById('editTaskTags').value = task.tags ? task.tags.join(', ') : '';
       document.getElementById('taskModal').classList.add('show');
     }
 
@@ -1311,12 +1777,16 @@
 
     async function updateTask() {
       if (!currentTaskId) return;
+      const tagsStr = document.getElementById('editTaskTags').value.trim();
+      const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(t => t) : [];
+
       const updates = {
         title: document.getElementById('editTaskTitle').value.trim(),
         description: document.getElementById('editTaskDesc').value.trim(),
         status: document.getElementById('editTaskStatus').value,
         priority: document.getElementById('editTaskPriority').value,
-        due_date: document.getElementById('editTaskDueDate').value || null
+        due_date: document.getElementById('editTaskDueDate').value || null,
+        tags
       };
 
       if (!updates.title) {
@@ -1600,6 +2070,397 @@
       showToast('计划已删除');
     }
 
+    // ========== Goals ==========
+    function renderGoals() {
+      const list = document.getElementById('goalsList');
+      if (goals.length === 0) {
+        list.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-light);">暂无目标，点击上方按钮创建</div>';
+        return;
+      }
+
+      list.innerHTML = goals.map(goal => {
+        const goalMilestones = milestones[goal.id] || [];
+        const completedCount = goalMilestones.filter(m => m.completed).length;
+        const progress = goal.target_value > 0 ? Math.min(100, Math.round((goal.current_value / goal.target_value) * 100)) : 0;
+        const deadline = goal.deadline ? new Date(goal.deadline).toLocaleDateString('zh-CN') : '无截止日期';
+        const statusLabel = { active: '进行中', completed: '已完成', paused: '已暂停', cancelled: '已取消' }[goal.status];
+
+        return `
+          <div class="goal-item">
+            <div class="goal-header">
+              <span class="goal-title">${escapeHtml(goal.title)}</span>
+              <span class="goal-status ${goal.status}">${statusLabel}</span>
+            </div>
+            ${goal.description ? `<div class="goal-meta">${escapeHtml(goal.description)}</div>` : ''}
+            <div class="goal-meta">截止日期: ${deadline} | 单位: ${goal.unit || '无'}</div>
+            <div class="goal-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${progress}%"></div>
+              </div>
+              <div class="progress-text">
+                <span>${goal.current_value} / ${goal.target_value} ${goal.unit || ''}</span>
+                <span>${progress}%</span>
+              </div>
+            </div>
+            <div class="goal-milestones">
+              <h4 style="margin-bottom: 8px;">里程碑 (${completedCount}/${goalMilestones.length})</h4>
+              ${goalMilestones.map(m => `
+                <div class="milestone-item">
+                  <input type="checkbox" class="milestone-checkbox" ${m.completed ? 'checked' : ''} onchange="toggleMilestone('${m.id}', ${!m.completed})">
+                  <span class="milestone-title ${m.completed ? 'completed' : ''}">${escapeHtml(m.title)}</span>
+                </div>
+              `).join('')}
+            </div>
+            <div class="goal-actions">
+              <button class="btn btn-sm btn-secondary" onclick="updateGoalProgress('${goal.id}')">更新进度</button>
+              <button class="btn btn-sm btn-secondary" onclick="showMilestoneModal('${goal.id}')">添加里程碑</button>
+              <button class="btn btn-sm btn-secondary" onclick="editGoal('${goal.id}')">编辑</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteGoal('${goal.id}')">删除</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function showGoalModal(goalId = null) {
+      currentGoalId = goalId;
+      const modal = document.getElementById('goalModal');
+      const title = document.getElementById('goalModalTitle');
+
+      if (goalId) {
+        const goal = goals.find(g => g.id === goalId);
+        if (!goal) return;
+        title.textContent = '编辑目标';
+        document.getElementById('goalTitle').value = goal.title;
+        document.getElementById('goalDesc').value = goal.description || '';
+        document.getElementById('goalTarget').value = goal.target_value;
+        document.getElementById('goalUnit').value = goal.unit || '';
+        document.getElementById('goalDeadline').value = goal.deadline || '';
+        document.getElementById('goalStatus').value = goal.status;
+      } else {
+        title.textContent = '新建目标';
+        document.getElementById('goalTitle').value = '';
+        document.getElementById('goalDesc').value = '';
+        document.getElementById('goalTarget').value = '';
+        document.getElementById('goalUnit').value = '';
+        document.getElementById('goalDeadline').value = '';
+        document.getElementById('goalStatus').value = 'active';
+      }
+
+      modal.classList.add('show');
+    }
+
+    function hideGoalModal() {
+      document.getElementById('goalModal').classList.remove('show');
+      currentGoalId = null;
+    }
+
+    async function saveGoal() {
+      const title = document.getElementById('goalTitle').value.trim();
+      const targetValue = parseFloat(document.getElementById('goalTarget').value);
+
+      if (!title || isNaN(targetValue)) {
+        showToast('请填写标题和目标值', 'error');
+        return;
+      }
+
+      const goalData = {
+        title,
+        description: document.getElementById('goalDesc').value.trim(),
+        target_value: targetValue,
+        unit: document.getElementById('goalUnit').value.trim(),
+        deadline: document.getElementById('goalDeadline').value || null,
+        status: document.getElementById('goalStatus').value,
+        user_id: currentUser.id
+      };
+
+      if (currentGoalId) {
+        const { error } = await supabaseClient
+          .from('goals')
+          .update(goalData)
+          .eq('id', currentGoalId);
+        if (error) {
+          showToast('更新失败', 'error');
+          return;
+        }
+      } else {
+        const { error } = await supabaseClient
+          .from('goals')
+          .insert(goalData);
+        if (error) {
+          showToast('创建失败', 'error');
+          return;
+        }
+      }
+
+      hideGoalModal();
+      await loadGoals();
+      renderDashboard();
+      showToast(currentGoalId ? '目标已更新' : '目标已创建');
+    }
+
+    function editGoal(id) {
+      showGoalModal(id);
+    }
+
+    async function deleteGoal(id) {
+      if (!confirm('确定要删除这个目标吗？')) return;
+
+      const { error } = await supabaseClient
+        .from('goals')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        showToast('删除失败', 'error');
+        return;
+      }
+
+      await loadGoals();
+      renderDashboard();
+      showToast('目标已删除');
+    }
+
+    async function updateGoalProgress(goalId) {
+      const goal = goals.find(g => g.id === goalId);
+      if (!goal) return;
+
+      const newValue = prompt(`当前进度: ${goal.current_value}/${goal.target_value} ${goal.unit || ''}\n输入新的进度值:`);
+      if (newValue === null) return;
+
+      const value = parseFloat(newValue);
+      if (isNaN(value)) {
+        showToast('请输入有效数字', 'error');
+        return;
+      }
+
+      const newStatus = value >= goal.target_value ? 'completed' : goal.status;
+
+      const { error } = await supabaseClient
+        .from('goals')
+        .update({ current_value: value, status: newStatus })
+        .eq('id', goalId);
+
+      if (error) {
+        showToast('更新失败', 'error');
+        return;
+      }
+
+      await loadGoals();
+      renderDashboard();
+      showToast('进度已更新');
+    }
+
+    let currentMilestoneGoalId = null;
+
+    function showMilestoneModal(goalId) {
+      currentMilestoneGoalId = goalId;
+      document.getElementById('milestoneTitle').value = '';
+      document.getElementById('milestoneModal').classList.add('show');
+    }
+
+    function hideMilestoneModal() {
+      document.getElementById('milestoneModal').classList.remove('show');
+      currentMilestoneGoalId = null;
+    }
+
+    async function saveMilestone() {
+      const title = document.getElementById('milestoneTitle').value.trim();
+      if (!title) {
+        showToast('请输入里程碑标题', 'error');
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from('milestones')
+        .insert({
+          goal_id: currentMilestoneGoalId,
+          title,
+          sort_order: (milestones[currentMilestoneGoalId] || []).length
+        });
+
+      if (error) {
+        showToast('添加失败', 'error');
+        return;
+      }
+
+      hideMilestoneModal();
+      await loadGoals();
+      showToast('里程碑已添加');
+    }
+
+    async function toggleMilestone(milestoneId, completed) {
+      const { error } = await supabaseClient
+        .from('milestones')
+        .update({ completed, completed_at: completed ? new Date().toISOString() : null })
+        .eq('id', milestoneId);
+
+      if (error) {
+        showToast('更新失败', 'error');
+        return;
+      }
+
+      await loadGoals();
+    }
+
+    // ========== AI Assistant ==========
+    const AI_API_KEY_STORAGE = 'claude_api_key';
+
+    function getApiKey() {
+      return localStorage.getItem(AI_API_KEY_STORAGE) || '';
+    }
+
+    function setApiKey(key) {
+      localStorage.setItem(AI_API_KEY_STORAGE, key);
+    }
+
+    function promptApiKey() {
+      const key = prompt('请输入 Claude API Key（sk-ant-...）:', getApiKey());
+      if (key !== null) {
+        setApiKey(key);
+        return key;
+      }
+      return null;
+    }
+
+    async function callClaudeAPI(prompt) {
+      const apiKey = getApiKey();
+      if (!apiKey) {
+        const key = promptApiKey();
+        if (!key) return null;
+      }
+
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': getApiKey(),
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 2000,
+            messages: [{ role: 'user', content: prompt }]
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error?.message || 'API 调用失败');
+        }
+
+        const data = await response.json();
+        return data.content[0].text;
+      } catch (err) {
+        showToast('AI 调用失败: ' + err.message, 'error');
+        return null;
+      }
+    }
+
+    async function aiAssist(action) {
+      const content = document.getElementById('logContent').value.trim();
+      if (!content) {
+        showToast('请先输入一些内容', 'error');
+        return;
+      }
+
+      const prompts = {
+        continue: `请续写以下日记内容，保持风格一致，续写2-3段：\n\n${content}`,
+        polish: `请润色以下日记内容，使其更流畅、更生动，但保持原意：\n\n${content}`,
+        summarize: `请用3-5个要点总结以下日记内容：\n\n${content}`
+      };
+
+      const btn = event.target;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="ai-loading"></span>处理中...';
+
+      const result = await callClaudeAPI(prompts[action]);
+
+      btn.disabled = false;
+      btn.textContent = { continue: '✨ 续写', polish: '✨ 润色', summarize: '✨ 总结' }[action];
+
+      if (result) {
+        if (action === 'summarize') {
+          showToast('AI 总结完成，请查看控制台', 'success');
+          console.log('AI 总结:', result);
+        } else {
+          document.getElementById('logContent').value = result;
+          showToast('AI 处理完成');
+        }
+      }
+    }
+
+    async function aiAssistNote(action) {
+      const content = document.getElementById('noteContent').value.trim();
+      if (!content) {
+        showToast('请先输入一些内容', 'error');
+        return;
+      }
+
+      const prompts = {
+        continue: `请续写以下笔记内容，保持风格一致，续写2-3段：\n\n${content}`,
+        polish: `请润色以下笔记内容，使其更流畅、更专业，但保持原意：\n\n${content}`,
+        summarize: `请用3-5个要点总结以下笔记内容：\n\n${content}`,
+        translate: `请将以下笔记内容翻译成英文：\n\n${content}`
+      };
+
+      const btn = event.target;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="ai-loading"></span>处理中...';
+
+      const result = await callClaudeAPI(prompts[action]);
+
+      btn.disabled = false;
+      btn.textContent = { continue: '✨ 续写', polish: '✨ 润色', summarize: '✨ 总结', translate: '✨ 翻译' }[action];
+
+      if (result) {
+        if (action === 'summarize') {
+          showToast('AI 总结完成，请查看控制台', 'success');
+          console.log('AI 总结:', result);
+        } else {
+          document.getElementById('noteContent').value = result;
+          showToast('AI 处理完成');
+        }
+      }
+    }
+
+    // ========== Dashboard ==========
+    function renderDashboard() {
+      // Task stats
+      const todoCount = tasks.filter(t => t.status === 'todo').length;
+      const doingCount = tasks.filter(t => t.status === 'doing').length;
+      const doneCount = tasks.filter(t => t.status === 'done').length;
+      document.getElementById('taskStats').innerHTML = `
+        <div class="stat-item"><div class="stat-value">${todoCount}</div><div class="stat-label">待办</div></div>
+        <div class="stat-item"><div class="stat-value">${doingCount}</div><div class="stat-label">进行中</div></div>
+        <div class="stat-item"><div class="stat-value">${doneCount}</div><div class="stat-label">已完成</div></div>
+      `;
+
+      // Today plans
+      const today = new Date().toISOString().split('T')[0];
+      const todayPlansList = plans.filter(p => p.target_date === today && p.status !== 'completed').slice(0, 5);
+      document.getElementById('todayPlans').innerHTML = todayPlansList.length > 0
+        ? todayPlansList.map(p => `<div class="dashboard-item"><div class="dashboard-item-title">${escapeHtml(p.title)}</div></div>`).join('')
+        : '<div style="color: var(--text-light); text-align: center; padding: 20px;">今日无计划</div>';
+
+      // Recent notes
+      const recentNotesList = notes.slice(0, 5);
+      document.getElementById('recentNotes').innerHTML = recentNotesList.length > 0
+        ? recentNotesList.map(n => `<div class="dashboard-item"><div class="dashboard-item-title">${escapeHtml(n.title)}</div><div class="dashboard-item-meta">${new Date(n.updated_at).toLocaleDateString('zh-CN')}</div></div>`).join('')
+        : '<div style="color: var(--text-light); text-align: center; padding: 20px;">暂无笔记</div>';
+
+      // Goals progress
+      const activeGoals = goals.filter(g => g.status === 'active').slice(0, 3);
+      document.getElementById('goalsProgress').innerHTML = activeGoals.length > 0
+        ? activeGoals.map(g => {
+            const progress = g.target_value > 0 ? Math.round((g.current_value / g.target_value) * 100) : 0;
+            return `<div class="dashboard-item"><div class="dashboard-item-title">${escapeHtml(g.title)}</div><div class="progress-bar" style="margin-top: 4px;"><div class="progress-fill" style="width: ${progress}%"></div></div></div>`;
+          }).join('')
+        : '<div style="color: var(--text-light); text-align: center; padding: 20px;">暂无进行中的目标</div>';
+    }
+
     // ========== Notes ==========
     function renderNotes() {
       const list = document.getElementById('notesListItems');
@@ -1672,6 +2533,26 @@
 
       await loadNotes();
       showToast('笔记已保存');
+    }
+
+    let isPreviewMode = false;
+
+    function toggleNotePreview() {
+      isPreviewMode = !isPreviewMode;
+      const content = document.getElementById('noteContent');
+      const preview = document.getElementById('notePreview');
+      const btn = document.getElementById('previewBtn');
+
+      if (isPreviewMode) {
+        content.style.display = 'none';
+        preview.style.display = 'block';
+        preview.innerHTML = marked.parse(content.value || '');
+        btn.textContent = '✏️ 编辑';
+      } else {
+        content.style.display = 'block';
+        preview.style.display = 'none';
+        btn.textContent = '👁️ 预览';
+      }
     }
 
     async function togglePin() {
