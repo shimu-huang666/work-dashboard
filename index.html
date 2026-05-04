@@ -746,23 +746,8 @@
     </div>
   </div>
 
-  <!-- Config Panel (独立于登录和主界面) -->
-  <div class="config-panel" id="configPanel" style="position: fixed; top: 20px; right: 20px; z-index: 100; max-width: 400px;">
-    <h3>Supabase 配置</h3>
-    <p style="font-size: 13px; color: var(--text-light); margin-bottom: 12px;">
-      请先在 <a href="https://supabase.com" target="_blank">Supabase</a> 创建项目，然后执行 supabase-setup.sql，最后填入以下信息：
-    </p>
-    <div class="config-form">
-      <div class="field">
-        <label>Project URL</label>
-        <input type="text" id="supabaseUrl" placeholder="https://xxxxx.supabase.co">
-      </div>
-      <div class="field">
-        <label>Anon Key</label>
-        <input type="text" id="supabaseKey" placeholder="eyJxxxxxx">
-      </div>
-      <button class="btn btn-primary" onclick="saveConfig()">保存并连接</button>
-    </div>
+  <!-- Config Panel (已隐藏，配置已硬编码) -->
+  <div class="config-panel" id="configPanel" style="display: none;">
   </div>
 
   <!-- Main App -->
@@ -773,7 +758,6 @@
       <div class="user-info">
         <span class="header-date" id="currentDate"></span>
         <span class="user-email" id="userEmail"></span>
-        <button class="btn-icon" onclick="toggleConfig()" title="设置">⚙️</button>
         <button class="btn btn-sm btn-secondary" onclick="handleLogout()">退出</button>
       </div>
     </header>
@@ -983,6 +967,8 @@
 
   <script>
     // ========== Global State ==========
+    const SUPABASE_URL = 'https://ebeqvdvlbcjlqwysdzyf.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_w1onbOgnAGpf7H-lW4fqAQ_3jxzZ22y';
     let supabaseClient = null;
     let currentUser = null;
     let currentTab = 'kanban';
@@ -1012,34 +998,12 @@
 
     // ========== Supabase Config ==========
     function loadConfig() {
-      const url = localStorage.getItem('supabase_url');
-      const key = localStorage.getItem('supabase_key');
-      if (url && key) {
-        document.getElementById('supabaseUrl').value = url;
-        document.getElementById('supabaseKey').value = key;
-        initSupabase(url, key);
-      } else {
-        document.getElementById('configPanel').classList.add('show');
-        document.getElementById('authPage').style.display = 'flex';
-      }
-    }
-
-    function saveConfig() {
-      const url = document.getElementById('supabaseUrl').value.trim();
-      const key = document.getElementById('supabaseKey').value.trim();
-      if (!url || !key) {
-        showToast('请填写完整的配置信息', 'error');
-        return;
-      }
-      localStorage.setItem('supabase_url', url);
-      localStorage.setItem('supabase_key', key);
-      initSupabase(url, key);
-      document.getElementById('configPanel').classList.remove('show');
-      showToast('配置保存成功');
+      // 直接使用硬编码的配置
+      initSupabase(SUPABASE_URL, SUPABASE_KEY);
     }
 
     function toggleConfig() {
-      document.getElementById('configPanel').classList.toggle('show');
+      // 隐藏配置面板（已硬编码配置）
     }
 
     async function initSupabase(url, key) {
