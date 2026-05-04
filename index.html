@@ -1383,14 +1383,10 @@
           </div>
           <div class="settings-info">
             <h4>MIMO (小米)</h4>
-            <p><strong>按量付费：</strong></p>
-            <p>端点: https://api.xiaomimimo.com/v1</p>
+            <p>平台: <a href="https://platform.xiaomimimo.com" target="_blank">platform.xiaomimimo.com</a></p>
+            <p>端点: https://api.xiaomimimo.com/v1/chat/completions</p>
             <p>Key 格式: sk-xxxxx</p>
-            <p>获取: <a href="https://mimo.xiaomi.com" target="_blank">API Keys 页面</a></p>
-            <p style="margin-top: 8px;"><strong>Token Plan（订阅）：</strong></p>
-            <p>端点: https://token-plan-cn.xiaomimimo.com/v1</p>
-            <p>Key 格式: tp-xxxxx</p>
-            <p>获取: <a href="https://mimo.xiaomi.com" target="_blank">订阅管理页面</a></p>
+            <p>模型: MiMo-7B-RL、MiMo-7B-SFT</p>
           </div>
         </div>
       </div>
@@ -2456,9 +2452,9 @@
       },
       mimo: {
         name: 'MIMO (小米)',
-        endpoint: 'https://token-plan-cn.xiaomimimo.com/v1/chat/completions',
+        endpoint: 'https://api.xiaomimimo.com/v1/chat/completions',
         keyPlaceholder: 'sk-...',
-        models: ['mimo-chat']
+        models: ['MiMo-7B-RL', 'MiMo-7B-SFT']
       }
     };
 
@@ -2625,7 +2621,7 @@
               'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-              model: 'mimo-chat',
+              model: 'MiMo-7B-RL',
               max_tokens: 2000,
               messages: [{ role: 'user', content: prompt }]
             })
