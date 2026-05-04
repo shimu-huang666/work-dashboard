@@ -198,6 +198,18 @@
     .due-date-badge.today { background: #FEF3C7; color: #D97706; }
     .due-date-badge.soon { background: #DBEAFE; color: #2563EB; }
     .due-date-badge.normal { background: #F3F4F6; color: #6B7280; }
+    .task-dates {
+      display: flex;
+      gap: 8px;
+      margin: 8px 0;
+      flex-wrap: wrap;
+    }
+    .task-date {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .task-date.created { background: #F3F4F6; color: #6B7280; }
     .kanban-card-actions {
       display: flex;
       gap: 4px;
@@ -798,7 +810,10 @@
                 <option value="medium" selected>中优先级</option>
                 <option value="high">高优先级</option>
               </select>
-              <input type="date" id="todoDueDate" style="flex:1;">
+              <div style="flex:1;">
+                <label style="font-size:11px; color:#6B7280;">截止日期</label>
+                <input type="date" id="todoDueDate" style="width:100%;">
+              </div>
             </div>
             <div class="form-actions">
               <button class="btn btn-secondary btn-sm" onclick="toggleAddForm('todo')">取消</button>
@@ -824,7 +839,10 @@
                 <option value="medium" selected>中优先级</option>
                 <option value="high">高优先级</option>
               </select>
-              <input type="date" id="doingDueDate" style="flex:1;">
+              <div style="flex:1;">
+                <label style="font-size:11px; color:#6B7280;">截止日期</label>
+                <input type="date" id="doingDueDate" style="width:100%;">
+              </div>
             </div>
             <div class="form-actions">
               <button class="btn btn-secondary btn-sm" onclick="toggleAddForm('doing')">取消</button>
@@ -1150,9 +1168,15 @@
     function taskCardHTML(task) {
       const priorityClass = `priority-${task.priority}`;
       const priorityLabel = { low: '低', medium: '中', high: '高' }[task.priority];
-      const dueDate = task.due_date ? new Date(task.due_date) : null;
       const statusButtons = task.status !== 'done' ?
         `<button onclick="moveTask('${task.id}', '${task.status === 'todo' ? 'doing' : 'done'}')" title="移动到下一阶段">▶</button>` : '';
+
+      // 解析截止日期（处理时区问题）
+      let dueDate = null;
+      if (task.due_date) {
+        const parts = task.due_date.split('-');
+        dueDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      }
 
       // 计算截止时间状态
       let dueDateBadge = '';
@@ -1175,19 +1199,24 @@
         dueDateBadge = `<span class="due-date-badge normal">${dueDate.toLocaleDateString('zh-CN')}</span>`;
       }
 
+      // 格式化创建时间
+      const createdAt = task.created_at ? new Date(task.created_at).toLocaleDateString('zh-CN') : '';
+
       return `
         <div class="kanban-card" onclick="editTask('${task.id}')">
           <div class="kanban-card-title">${escapeHtml(task.title)}</div>
           ${task.description ? `<div class="kanban-card-desc">${escapeHtml(task.description)}</div>` : ''}
+          <div class="task-dates">
+            ${createdAt ? `<span class="task-date created">创建: ${createdAt}</span>` : ''}
+            ${dueDateBadge}
+          </div>
           <div class="kanban-card-meta">
             <span class="priority-badge ${priorityClass}">${priorityLabel}</span>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              ${dueDateBadge}
-              <div class="kanban-card-actions" onclick="event.stopPropagation()">
-                ${statusButtons}
-                <button onclick="editTask('${task.id}')" title="编辑">✏️</button>
-              </div>
+            <div class="kanban-card-actions" onclick="event.stopPropagation()">
+              ${statusButtons}
+              <button onclick="editTask('${task.id}')" title="编辑">✏️</button>
             </div>
+          </div>
           </div>
         </div>
       `;
