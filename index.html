@@ -2304,55 +2304,114 @@
     }
 
     // ========== AI Assistant ==========
-    const AI_API_KEY_STORAGE = 'claude_api_key';
+    const AI_PROVIDER_KEY = 'ai_provider';
+    const AI_API_KEY_PREFIX = 'ai_key_';
 
-    function getApiKey() {
-      return localStorage.getItem(AI_API_KEY_STORAGE) || '';
-    }
-
-    function setApiKey(key) {
-      localStorage.setItem(AI_API_KEY_STORAGE, key);
-    }
-
-    function promptApiKey() {
-      const key = prompt('请输入 Claude API Key（sk-ant-...）:', getApiKey());
-      if (key !== null) {
-        setApiKey(key);
-        return key;
+    const AI_PROVIDERS = {
+      claude: {
+        name: 'Claude',
+        endpoint: 'https://api.anthropic.com/v1/messages',
+        keyPlaceholder: 'sk-ant-...',
+        models: ['claude-sonnet-4-20250514']
+      },
+      deepseek: {
+        name: 'Deepseek',
+        endpoint: 'https://api.deepseek.com/v1/chat/completions',
+        keyPlaceholder: 'sk-...',
+        models: ['deepseek-chat']
       }
-      return null;
+    };
+
+    function getProvider() {
+      return localStorage.getItem(AI_PROVIDER_KEY) || 'claude';
     }
 
-    async function callClaudeAPI(prompt) {
-      const apiKey = getApiKey();
+    function setProvider(provider) {
+      localStorage.setItem(AI_PROVIDER_KEY, provider);
+    }
+
+    function getApiKey(provider) {
+      return localStorage.getItem(AI_API_KEY_PREFIX + (provider || getProvider())) || '';
+    }
+
+    function setApiKey(provider, key) {
+      localStorage.setItem(AI_API_KEY_PREFIX + provider, key);
+    }
+
+    function promptAIConfig() {
+      const currentProvider = getProvider();
+      const currentKey = getApiKey(currentProvider);
+
+      const provider = prompt('选择 AI 服务 (1=Claude, 2=Deepseek):\n当前: ' + AI_PROVIDERS[currentProvider].name, currentProvider === 'claude' ? '1' : '2');
+      if (!provider) return null;
+
+      const selectedProvider = provider === '1' ? 'claude' : 'deepseek';
+      const key = prompt(`请输入 ${AI_PROVIDERS[selectedProvider].name} API Key:`, getApiKey(selectedProvider));
+      if (!key) return null;
+
+      setProvider(selectedProvider);
+      setApiKey(selectedProvider, key);
+      return { provider: selectedProvider, key };
+    }
+
+    async function callAIAPI(prompt) {
+      const provider = getProvider();
+      let apiKey = getApiKey(provider);
+
       if (!apiKey) {
-        const key = promptApiKey();
-        if (!key) return null;
+        const config = promptAIConfig();
+        if (!config) return null;
+        apiKey = config.key;
       }
 
       try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': getApiKey(),
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
-          },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 2000,
-            messages: [{ role: 'user', content: prompt }]
-          })
-        });
+        let response;
 
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error?.message || 'API 调用失败');
+        if (provider === 'claude') {
+          response = await fetch(AI_PROVIDERS.claude.endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01',
+              'anthropic-dangerous-direct-browser-access': 'true'
+            },
+            body: JSON.stringify({
+              model: 'claude-sonnet-4-20250514',
+              max_tokens: 2000,
+              messages: [{ role: 'user', content: prompt }]
+            })
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.message || 'API 调用失败');
+          }
+
+          const data = await response.json();
+          return data.content[0].text;
+        } else if (provider === 'deepseek') {
+          response = await fetch(AI_PROVIDERS.deepseek.endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: 'deepseek-chat',
+              max_tokens: 2000,
+              messages: [{ role: 'user', content: prompt }]
+            })
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.message || 'API 调用失败');
+          }
+
+          const data = await response.json();
+          return data.choices[0].message.content;
         }
-
-        const data = await response.json();
-        return data.content[0].text;
       } catch (err) {
         showToast('AI 调用失败: ' + err.message, 'error');
         return null;
@@ -2376,7 +2435,7 @@
       btn.disabled = true;
       btn.innerHTML = '<span class="ai-loading"></span>处理中...';
 
-      const result = await callClaudeAPI(prompts[action]);
+      const result = await callAIAPI(prompts[action]);
 
       btn.disabled = false;
       btn.textContent = { continue: '✨ 续写', polish: '✨ 润色', summarize: '✨ 总结' }[action];
@@ -2410,7 +2469,7 @@
       btn.disabled = true;
       btn.innerHTML = '<span class="ai-loading"></span>处理中...';
 
-      const result = await callClaudeAPI(prompts[action]);
+      const result = await callAIAPI(prompts[action]);
 
       btn.disabled = false;
       btn.textContent = { continue: '✨ 续写', polish: '✨ 润色', summarize: '✨ 总结', translate: '✨ 翻译' }[action];
