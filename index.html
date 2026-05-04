@@ -2319,6 +2319,12 @@
         endpoint: 'https://api.deepseek.com/v1/chat/completions',
         keyPlaceholder: 'sk-...',
         models: ['deepseek-chat']
+      },
+      mimo: {
+        name: 'MIMO (小米)',
+        endpoint: 'https://token-plan-cn.xiaomimimo.com/v1/chat/completions',
+        keyPlaceholder: 'sk-...',
+        models: ['mimo-chat']
       }
     };
 
@@ -2342,10 +2348,14 @@
       const currentProvider = getProvider();
       const currentKey = getApiKey(currentProvider);
 
-      const provider = prompt('选择 AI 服务 (1=Claude, 2=Deepseek):\n当前: ' + AI_PROVIDERS[currentProvider].name, currentProvider === 'claude' ? '1' : '2');
+      const provider = prompt('选择 AI 服务:\n1=Claude\n2=Deepseek\n3=MIMO (小米)\n当前: ' + AI_PROVIDERS[currentProvider].name, currentProvider === 'claude' ? '1' : currentProvider === 'deepseek' ? '2' : '3');
       if (!provider) return null;
 
-      const selectedProvider = provider === '1' ? 'claude' : 'deepseek';
+      let selectedProvider;
+      if (provider === '1') selectedProvider = 'claude';
+      else if (provider === '2') selectedProvider = 'deepseek';
+      else selectedProvider = 'mimo';
+
       const key = prompt(`请输入 ${AI_PROVIDERS[selectedProvider].name} API Key:`, getApiKey(selectedProvider));
       if (!key) return null;
 
@@ -2399,6 +2409,27 @@
             },
             body: JSON.stringify({
               model: 'deepseek-chat',
+              max_tokens: 2000,
+              messages: [{ role: 'user', content: prompt }]
+            })
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.message || 'API 调用失败');
+          }
+
+          const data = await response.json();
+          return data.choices[0].message.content;
+        } else if (provider === 'mimo') {
+          response = await fetch(AI_PROVIDERS.mimo.endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: 'mimo-chat',
               max_tokens: 2000,
               messages: [{ role: 'user', content: prompt }]
             })
