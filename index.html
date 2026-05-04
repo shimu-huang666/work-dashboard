@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>个人工作台</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -709,6 +710,16 @@
       font-size: 13px;
       color: var(--text-light);
     }
+
+    /* ========== Footer ========== */
+    .footer {
+      text-align: center;
+      padding: 20px;
+      margin-top: 40px;
+      color: var(--text-light);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
   </style>
 </head>
 <body>
@@ -939,6 +950,11 @@
         </div>
       </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>个人工作台 v1.0.0 | 作者: 时慕</p>
+    </footer>
   </div>
 
   <!-- Plan Modal -->
