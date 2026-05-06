@@ -43,6 +43,7 @@ https://github.com/shimu-huang666/work-dashboard
 ├── supabase-setup.sql     # 基础数据库初始化脚本
 ├── auth-migration.sql     # 登录用户隔离迁移脚本
 ├── feature-migration.sql  # 目标、里程碑、任务标签等增强功能迁移
+├── progress-migration.sql # 任务进度字段迁移和 Supabase schema cache 刷新
 ├── work_profiles.sql      # 用户配置扩展表
 └── README.md              # 项目说明
 ```
@@ -118,7 +119,8 @@ SQL Editor -> New query
 1. `supabase-setup.sql`
 2. `auth-migration.sql`
 3. `feature-migration.sql`
-4. `work_profiles.sql`
+4. `progress-migration.sql`
+5. `work_profiles.sql`
 
 脚本作用：
 
@@ -127,13 +129,14 @@ SQL Editor -> New query
 | `supabase-setup.sql` | 创建 `tasks`、`daily_logs`、`plans`、`notes`，添加更新时间触发器、索引和基础 RLS |
 | `auth-migration.sql` | 为主表添加 `user_id`，把 RLS 改成用户只能访问自己的数据 |
 | `feature-migration.sql` | 添加任务标签、目标表 `goals`、里程碑表 `milestones` |
+| `progress-migration.sql` | 添加任务进度字段 `tasks.progress`，并刷新 Supabase REST schema cache |
 | `work_profiles.sql` | 创建用户配置表 `work_profiles`，用于后续保存用户偏好 |
 
 ### 3. 数据表说明
 
 | 表名 | 用途 |
 | --- | --- |
-| `tasks` | 看板任务，包含标题、描述、状态、优先级、截止日期、标签、用户归属 |
+| `tasks` | 看板任务，包含标题、描述、状态、优先级、进度、截止日期、标签、用户归属 |
 | `daily_logs` | 每日记录，包含日期、内容、心情、用户归属 |
 | `plans` | 未来计划，包含目标日期、状态、用户归属 |
 | `notes` | 笔记，包含标题、内容、标签、置顶状态、用户归属 |
@@ -305,6 +308,34 @@ date DATE NOT NULL UNIQUE
 
 如果多个用户都要在同一天写日记，建议改成 `(user_id, date)` 联合唯一约束。
 
+### 更新任务进度时报 `PGRST204`
+
+如果 Supabase 表编辑器里已经能看到 `tasks.progress`，但浏览器控制台仍然报：
+
+```text
+Could not find the 'progress' column of 'tasks' in the schema cache
+```
+
+这通常不是前端代码问题，也不是浏览器 Tracking Prevention 导致的。进入 Supabase `SQL Editor` 重新执行 `progress-migration.sql`，脚本会确保 `public.tasks.progress` 存在并刷新 Supabase REST(PostgREST) 的 schema cache。
+
+执行完成后，SQL Editor 末尾应该返回 1 行诊断结果，其中：
+
+```text
+table_schema = public
+table_name = tasks
+column_name = progress
+data_type = integer
+```
+
+如果你确认字段已经存在，但仍然只想手动刷新 REST schema cache，可以执行：
+
+```sql
+NOTIFY pgrst, 'reload schema';
+SELECT pg_notification_queue_usage();
+```
+
+然后刷新应用页面再调整进度。
+
 ### 旧数据看不到
 
 执行 `auth-migration.sql` 后，RLS 会要求数据的 `user_id` 等于当前登录用户。如果旧数据的 `user_id` 为空，它不会显示。需要在数据库里手动把旧数据关联到对应用户。
@@ -316,4 +347,3 @@ date DATE NOT NULL UNIQUE
 - 前端可以公开 publishable key，但不能公开 service role key。
 - 所有涉及用户数据的表都必须启用 RLS。
 - 如果更换域名，记得同步更新 Supabase 的 Site URL 和 Redirect URLs。
-

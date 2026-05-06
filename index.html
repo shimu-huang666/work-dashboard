@@ -239,6 +239,125 @@
       border-radius: 12px;
       font-size: 11px;
     }
+    .task-progress {
+      margin: 10px 0 8px;
+      padding: 10px 12px;
+      background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 100%);
+      border-radius: 10px;
+      border: 1px solid #e0e7ff;
+      transition: all 0.3s ease;
+    }
+    .task-progress:hover {
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+      border-color: #c7d2fe;
+    }
+    .task-progress-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 500;
+    }
+    .task-progress-text {
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 13px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      min-width: 36px;
+      text-align: right;
+    }
+    .progress-slider {
+      --progress: 0%;
+      width: 100%;
+      height: 20px;
+      margin: 0;
+      border-radius: 999px;
+      background: transparent;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: all 0.2s ease;
+    }
+    .progress-slider:hover {
+      transform: scaleY(1.1);
+    }
+    .progress-slider:focus {
+      outline: none;
+    }
+    .progress-slider.is-dragging::-webkit-slider-thumb {
+      transform: scale(1.15);
+      box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .progress-slider.is-dragging::-moz-range-thumb {
+      transform: scale(1.15);
+      box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .progress-slider:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+    }
+    .progress-slider::-webkit-slider-runnable-track {
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(to right, #6366f1 0%, #e2e8f0 0%);
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+    .progress-slider::-webkit-slider-thumb {
+      width: 20px;
+      height: 20px;
+      margin-top: -5px;
+      border: 3px solid #fff;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3), 0 1px 3px rgba(0, 0, 0, 0.1);
+      appearance: none;
+      -webkit-appearance: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .progress-slider:hover::-webkit-slider-thumb {
+      transform: scale(1.1);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15), 0 4px 12px rgba(99, 102, 241, 0.25);
+    }
+    .progress-slider:focus::-webkit-slider-thumb {
+      box-shadow: 0 0 0 5px rgba(99, 102, 241, 0.2), 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    .progress-slider:disabled::-webkit-slider-thumb {
+      background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+      box-shadow: none;
+    }
+    .progress-slider::-moz-range-track {
+      height: 10px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+    .progress-slider::-moz-range-progress {
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+    }
+    .progress-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border: 3px solid #fff;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3), 0 1px 3px rgba(0, 0, 0, 0.1);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .progress-slider:hover::-moz-range-thumb {
+      transform: scale(1.1);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15), 0 4px 12px rgba(99, 102, 241, 0.25);
+    }
+    .progress-slider:disabled::-moz-range-thumb {
+      background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+      box-shadow: none;
+    }
     .kanban-card[draggable="true"] {
       cursor: grab;
     }
@@ -247,6 +366,9 @@
     }
     .kanban-card.dragging {
       opacity: 0.5;
+    }
+    .kanban-card.progress-editing {
+      cursor: default;
     }
     .kanban-column.drag-over {
       background: #F0F9FF;
@@ -890,6 +1012,37 @@
       font-size: 14px;
     }
     .modal-form textarea { resize: vertical; min-height: 100px; }
+    .modal-progress {
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 100%);
+      border-radius: 10px;
+      border: 1px solid #e0e7ff;
+    }
+    .modal-progress label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 13px;
+      color: #475569;
+      font-weight: 500;
+    }
+    .modal-progress label span {
+      font-weight: 700;
+      font-size: 15px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .modal-progress input[type="range"] {
+      width: 100%;
+      margin: 0;
+    }
+    .modal-progress .progress-slider {
+      margin-top: 4px;
+    }
     .modal-actions {
       display: flex;
       gap: 8px;
@@ -1450,6 +1603,11 @@
         </select>
         <input type="date" id="editTaskDueDate">
         <input type="text" id="editTaskTags" placeholder="标签（用逗号分隔）">
+        <div class="modal-progress">
+          <label>进度: <span id="editTaskProgressText">0%</span></label>
+          <input type="range" id="editTaskProgress" class="progress-slider" min="0" max="100" value="0" style="--progress: 0%"
+            oninput="previewModalTaskProgress(this)">
+        </div>
       </div>
       <div class="modal-actions">
         <button class="btn btn-danger" onclick="deleteTask()">删除</button>
@@ -1522,6 +1680,9 @@
     let goals = [];
     let milestones = {};
     let currentGoalId = null;
+    let taskProgressReady = false;
+    let taskProgressWarningShown = false;
+    let activeProgressSlider = null;
 
     // ========== Initialization ==========
     document.addEventListener('DOMContentLoaded', () => {
@@ -1529,6 +1690,9 @@
       loadConfig();
       initTabs();
       initSettings();
+      window.addEventListener('pointerup', endProgressSliderDrag);
+      window.addEventListener('mouseup', endProgressSliderDrag);
+      window.addEventListener('touchend', endProgressSliderDrag);
     });
 
     function updateCurrentDate() {
@@ -1549,7 +1713,9 @@
 
     async function initSupabase(url, key) {
       try {
-        supabaseClient = window.supabase.createClient(url, key);
+        supabaseClient = window.supabase.createClient(url, key, {
+          db: { schema: 'public' }
+        });
 
         // Listen for auth state changes
         supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -1563,8 +1729,8 @@
         updateUIForAuth();
 
         if (currentUser) {
-          await loadAllData();
-          showToast('连接成功');
+          const dbOk = await loadAllData();
+          showToast(dbOk ? '数据库连接正常' : '已连接，但任务进度字段暂不可用', dbOk ? 'success' : 'error');
         }
       } catch (err) {
         showToast('连接失败: ' + err.message, 'error');
@@ -1590,6 +1756,7 @@
 
     // ========== Data Loading ==========
     async function loadAllData() {
+      const dbOk = await checkDatabaseConnection();
       await Promise.all([
         loadTasks(),
         loadDailyLogs(),
@@ -1598,6 +1765,40 @@
         loadGoals()
       ]);
       renderDashboard();
+      return dbOk;
+    }
+
+    async function checkDatabaseConnection(showSuccess = false) {
+      const { error: tableError } = await supabaseClient
+        .from('tasks')
+        .select('id')
+        .limit(1);
+
+      if (tableError) {
+        taskProgressReady = false;
+        showToast('数据库连接异常: ' + tableError.message, 'error');
+        console.error('Database connection check failed:', tableError);
+        return false;
+      }
+
+      const { error: progressError } = await supabaseClient
+        .from('tasks')
+        .select('id, progress')
+        .limit(1);
+
+      taskProgressReady = !progressError;
+      if (progressError) {
+        console.error('Task progress column check failed:', progressError);
+        if (!taskProgressWarningShown) {
+          showToast('数据库暂未识别任务进度字段，请刷新 Supabase REST schema cache', 'error');
+          taskProgressWarningShown = true;
+        }
+        return false;
+      }
+
+      taskProgressWarningShown = false;
+      if (showSuccess) showToast('数据库连接正常');
+      return true;
     }
 
     async function loadTasks() {
@@ -1721,8 +1922,80 @@
       document.getElementById('doingList').innerHTML = doingTasks.map(t => taskCardHTML(t)).join('');
       document.getElementById('doneList').innerHTML = doneTasks.map(t => taskCardHTML(t)).join('');
 
+      // 初始化进度条背景样式
+      document.querySelectorAll('.progress-slider').forEach(slider => {
+        const progress = normalizeProgress(slider.value);
+        if (progress > 0) {
+          slider.style.background = `linear-gradient(to right, #6366f1 0%, #8b5cf6 ${progress}%, #e2e8f0 ${progress}%)`;
+        } else {
+          slider.style.background = `linear-gradient(to right, #e2e8f0 0%, #e2e8f0 100%)`;
+        }
+      });
+
       // 添加拖拽事件
       initDragAndDrop();
+    }
+
+    function normalizeProgress(value) {
+      const progress = Number.parseInt(value, 10);
+      if (!Number.isFinite(progress)) return 0;
+      return Math.min(100, Math.max(0, progress));
+    }
+
+    function setProgressSlider(slider, value) {
+      const progress = normalizeProgress(value ?? slider.value);
+      slider.value = progress;
+      slider.style.setProperty('--progress', progress + '%');
+      // 直接更新背景样式，使用渐变色
+      if (progress > 0) {
+        slider.style.background = `linear-gradient(to right, #6366f1 0%, #8b5cf6 ${progress}%, #e2e8f0 ${progress}%)`;
+      } else {
+        slider.style.background = `linear-gradient(to right, #e2e8f0 0%, #e2e8f0 100%)`;
+      }
+      const textId = slider.dataset.progressText;
+      if (textId) {
+        const textEl = document.getElementById(textId);
+        if (textEl) textEl.textContent = progress + '%';
+      }
+      return progress;
+    }
+
+    function previewTaskProgress(slider) {
+      setProgressSlider(slider);
+    }
+
+    function previewModalTaskProgress(slider) {
+      slider.dataset.progressText = 'editTaskProgressText';
+      setProgressSlider(slider);
+    }
+
+    function beginProgressSliderDrag(event, slider) {
+      event.stopPropagation();
+      if (activeProgressSlider === slider) return;
+      endProgressSliderDrag();
+
+      activeProgressSlider = slider;
+      slider.classList.add('is-dragging');
+
+      const card = slider.closest('.kanban-card');
+      if (!card) return;
+      card.dataset.prevDraggable = card.getAttribute('draggable') || 'false';
+      card.setAttribute('draggable', 'false');
+      card.classList.add('progress-editing');
+    }
+
+    function endProgressSliderDrag() {
+      if (!activeProgressSlider) return;
+      const slider = activeProgressSlider;
+      slider.classList.remove('is-dragging');
+
+      const card = slider.closest('.kanban-card');
+      if (card) {
+        card.setAttribute('draggable', card.dataset.prevDraggable || 'true');
+        delete card.dataset.prevDraggable;
+        card.classList.remove('progress-editing');
+      }
+      activeProgressSlider = null;
     }
 
     function taskCardHTML(task) {
@@ -1767,11 +2040,33 @@
         ? `<div class="task-tags">${task.tags.map(tag => `<span class="task-tag">${escapeHtml(tag)}</span>`).join('')}</div>`
         : '';
 
+      const progress = normalizeProgress(task.progress);
+      const progressTitle = taskProgressReady ? '拖动调整任务进度' : '可拖动预览；数据库字段就绪后会自动保存';
+      const progressHTML = `
+        <div class="task-progress" onclick="event.stopPropagation()">
+          <div class="task-progress-head">
+            <span>进度</span>
+            <span class="task-progress-text" id="text-${task.id}">${progress}%</span>
+          </div>
+          <input class="progress-slider" type="range" min="0" max="100" step="1"
+            value="${progress}" style="--progress: ${progress}%"
+            data-progress-text="text-${task.id}" title="${progressTitle}"
+            onpointerdown="beginProgressSliderDrag(event, this)"
+            onmousedown="beginProgressSliderDrag(event, this)"
+            ontouchstart="beginProgressSliderDrag(event, this)"
+            onclick="event.stopPropagation()"
+            ondragstart="return false"
+            oninput="previewTaskProgress(this)"
+            onchange="updateTaskProgress('${task.id}', this)">
+        </div>
+      `;
+
       return `
         <div class="kanban-card" draggable="true" data-task-id="${task.id}" onclick="editTask('${task.id}')">
           <div class="kanban-card-title">${escapeHtml(task.title)}</div>
           ${task.description ? `<div class="kanban-card-desc">${escapeHtml(task.description)}</div>` : ''}
           ${tagsHTML}
+          ${progressHTML}
           <div class="task-dates">
             ${createdAt ? `<span class="task-date created">创建: ${createdAt}</span>` : ''}
             ${dueDateBadge}
@@ -1797,6 +2092,40 @@
       }
     }
 
+    async function updateTaskProgress(taskId, slider) {
+      const progress = setProgressSlider(slider);
+      console.log('Updating progress:', { taskId, progress });
+
+      if (!taskProgressReady && !(await checkDatabaseConnection())) {
+        const task = tasks.find(t => t.id === taskId);
+        if (task) setProgressSlider(slider, task.progress);
+        showToast('数据库进度字段未就绪，无法保存进度', 'error');
+        renderTasks();
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from('tasks')
+        .update({ progress })
+        .eq('id', taskId)
+        .select('id, progress');
+
+      if (error) {
+        console.error('Progress update error:', error);
+        taskProgressReady = false;
+        const task = tasks.find(t => t.id === taskId);
+        if (task) setProgressSlider(slider, task.progress);
+        showToast('更新进度失败: ' + error.message, 'error');
+        renderTasks();
+        return;
+      }
+
+      console.log('Progress updated successfully:', data);
+      const task = tasks.find(t => t.id === taskId);
+      if (task) task.progress = progress;
+      showToast('进度已保存');
+    }
+
     // ========== Drag and Drop ==========
     let draggedTaskId = null;
 
@@ -1810,6 +2139,11 @@
 
       cards.forEach(card => {
         card.addEventListener('dragstart', (e) => {
+          if (e.target.closest('.task-progress, .progress-slider')) {
+            e.preventDefault();
+            return;
+          }
+
           draggedTaskId = card.dataset.taskId;
           card.classList.add('dragging');
           e.dataTransfer.effectAllowed = 'move';
@@ -1907,6 +2241,10 @@
       document.getElementById('editTaskPriority').value = task.priority;
       document.getElementById('editTaskDueDate').value = task.due_date || '';
       document.getElementById('editTaskTags').value = task.tags ? task.tags.join(', ') : '';
+      const progressSlider = document.getElementById('editTaskProgress');
+      progressSlider.disabled = false;
+      previewModalTaskProgress(progressSlider);
+      setProgressSlider(progressSlider, task.progress);
       document.getElementById('taskModal').classList.add('show');
     }
 
@@ -1928,6 +2266,10 @@
         due_date: document.getElementById('editTaskDueDate').value || null,
         tags
       };
+
+      if (taskProgressReady || await checkDatabaseConnection()) {
+        updates.progress = normalizeProgress(document.getElementById('editTaskProgress').value);
+      }
 
       if (!updates.title) {
         showToast('任务标题不能为空', 'error');

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   description TEXT,
   status TEXT DEFAULT 'todo' CHECK (status IN ('todo', 'doing', 'done')),
   priority TEXT DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high')),
+  progress INTEGER DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
   due_date DATE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -62,6 +63,11 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- 为所有表添加更新时间触发器
+DROP TRIGGER IF EXISTS update_tasks_updated_at ON tasks;
+DROP TRIGGER IF EXISTS update_daily_logs_updated_at ON daily_logs;
+DROP TRIGGER IF EXISTS update_plans_updated_at ON plans;
+DROP TRIGGER IF EXISTS update_notes_updated_at ON notes;
+
 CREATE TRIGGER update_tasks_updated_at
   BEFORE UPDATE ON tasks
   FOR EACH ROW
@@ -89,6 +95,11 @@ ALTER TABLE plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
 
 -- 创建 RLS 策略（个人使用，允许匿名完全访问）
+DROP POLICY IF EXISTS "Allow all operations on tasks" ON tasks;
+DROP POLICY IF EXISTS "Allow all operations on daily_logs" ON daily_logs;
+DROP POLICY IF EXISTS "Allow all operations on plans" ON plans;
+DROP POLICY IF EXISTS "Allow all operations on notes" ON notes;
+
 CREATE POLICY "Allow all operations on tasks" ON tasks
   FOR ALL USING (true) WITH CHECK (true);
 

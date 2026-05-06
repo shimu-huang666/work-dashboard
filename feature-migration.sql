@@ -36,6 +36,9 @@ ALTER TABLE goals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE milestones ENABLE ROW LEVEL SECURITY;
 
 -- 5. 创建 RLS 策略
+DROP POLICY IF EXISTS "Users can only access own goals" ON goals;
+DROP POLICY IF EXISTS "Users can only access own milestones" ON milestones;
+
 CREATE POLICY "Users can only access own goals" ON goals
   FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
@@ -51,6 +54,16 @@ CREATE INDEX IF NOT EXISTS idx_goals_status ON goals(status);
 CREATE INDEX IF NOT EXISTS idx_milestones_goal_id ON milestones(goal_id);
 
 -- 7. 创建更新时间触发器
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS update_goals_updated_at ON goals;
+
 CREATE TRIGGER update_goals_updated_at
   BEFORE UPDATE ON goals
   FOR EACH ROW
